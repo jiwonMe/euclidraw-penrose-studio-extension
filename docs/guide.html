@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>alid 확장 템플릿 개발 가이드</title>
+<meta name="description" content="alid 독립 확장 템플릿 개발 가이드. 패키지 계약, 설치 명세 API 2, 객체 어스펙트, UI 기여, watch 모드, 배포까지.">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6f6f7;
+    --surface: #ffffff;
+    --surface-2: #fbfbfc;
+    --muted: #f4f4f5;
+    --line: #e4e4e7;
+    --line-strong: #d4d4d8;
+    --text: #18181b;
+    --text-2: #52525b;
+    --text-3: #6b6b73;
+    --accent: #008ff0;
+    --accent-hover: #0077cc;
+    --accent-soft: #e5f4fe;
+    --accent-line: #b9e1fb;
+    --danger: #b42335;
+    --danger-soft: #fdf2f4;
+    --success: #18794e;
+    --success-soft: #eef8f2;
+    --warn: #8a5a00;
+    --warn-soft: #fff8e8;
+    --code-bg: #fbfbfc;
+    --code-head: #f6f6f7;
+    --shadow: 0 1px 2px rgba(0,0,0,.03);
+    --shadow-lg: 0 18px 48px -28px rgba(24,24,27,.28);
+    --font: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    --mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", monospace;
+    --top: 52px;
+    --rail: 268px;
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d0e11;
+    --surface: #151619;
+    --surface-2: #191a1e;
+    --muted: #202126;
+    --line: #2b2c32;
+    --line-strong: #3d3e46;
+    --text: #f4f4f5;
+    --text-2: #b4b4bf;
+    --text-3: #a1a1aa;
+    --accent: #4aaef5;
+    --accent-hover: #1a9df5;
+    --accent-soft: #0d283d;
+    --accent-line: #1b4767;
+    --danger: #f28b94;
+    --danger-soft: #2a1519;
+    --success: #80c9a1;
+    --success-soft: #12241b;
+    --warn: #e8bd6a;
+    --warn-soft: #2a2214;
+    --code-bg: #111216;
+    --code-head: #17181c;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
+    --shadow-lg: 0 18px 48px -28px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(var(--top) + 24px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.8 var(--font);
+    -webkit-font-smoothing: antialiased;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  code, kbd, pre { font-family: var(--mono); }
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  /* ---------- chrome ---------- */
+  .topbar {
+    position: fixed; inset: 0 0 auto; z-index: 60;
+    height: var(--top);
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 18px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand-mark {
+    width: 24px; height: 24px; border-radius: 6px;
+    display: grid; place-items: center;
+    background: var(--text); color: var(--surface);
+    flex: none;
+  }
+  .brand-mark svg { width: 14px; height: 14px; display: block; }
+  .brand-name { font-size: 13px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+  .brand-sub { font-size: 12px; color: var(--text-3); padding-left: 10px; border-left: 1px solid var(--line); white-space: nowrap; }
+  .topbar-spacer { flex: 1; }
+  .top-meta { display: flex; align-items: center; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 22px; padding: 0 8px;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); color: var(--text-2);
+    font: 500 10.5px/1 var(--mono); letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .top-btn {
+    width: 30px; height: 30px; border-radius: var(--radius-sm);
+    display: grid; place-items: center; color: var(--text-2);
+    border: 1px solid transparent;
+  }
+  .top-btn:hover { background: var(--muted); color: var(--text); border-color: var(--line); }
+  .top-btn svg { width: 15px; height: 15px; }
+  .nav-toggle { display: none; }
+
+  .shell { display: flex; align-items: flex-start; padding-top: var(--top); }
+
+  .rail {
+    position: fixed; top: var(--top); bottom: 0; left: 0; width: var(--rail);
+    padding: 26px 18px 32px 26px;
+    border-right: 1px solid var(--line);
+    background: var(--bg);
+    overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .rail-label {
+    font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--text-3); margin: 0 0 12px 8px;
+  }
+  .toc { list-style: none; margin: 0 0 28px; padding: 0; }
+  .toc a {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 6px 8px; border-radius: 5px;
+    color: var(--text-2); font-size: 12.5px; line-height: 1.45;
+    border-left: 2px solid transparent;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+  .toc a:hover { background: var(--muted); color: var(--text); }
+  .toc .n { font: 500 10px/1 var(--mono); color: var(--text-3); width: 15px; flex: none; }
+  .toc a.active { color: var(--text); background: var(--surface); border-left-color: var(--accent); box-shadow: var(--shadow); }
+  .toc a.active .n { color: var(--accent); }
+  .rail-note {
+    margin: 0 8px; padding: 12px 0 0; border-top: 1px solid var(--line);
+    color: var(--text-3); font-size: 11px; line-height: 1.7;
+  }
+  .rail-note code { font-size: 10.5px; color: var(--text-2); }
+  .rail-links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 10px; }
+  .rail-links a { color: var(--text-3); font-size: 11px; }
+  .rail-links a:hover { color: var(--accent); }
+
+  .main { flex: 1; min-width: 0; margin-left: var(--rail); }
+  .doc { width: min(100% - 96px, 800px); margin: 0 auto; padding: 0 0 120px; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 76px 0 54px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    display: flex; align-items: center; gap: 9px;
+    font: 600 10.5px/1 var(--mono); letter-spacing: .13em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 20px;
+  }
+  .eyebrow::before { content: ""; width: 22px; height: 1px; background: currentColor; opacity: .7; }
+  h1 {
+    margin: 0 0 20px;
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.08; letter-spacing: -.045em; font-weight: 640;
+    text-wrap: balance;
+  }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { margin: 0; max-width: 60ch; color: var(--text-2); font-size: 16.5px; line-height: 1.85; text-wrap: pretty; }
+  .hero-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 26px; }
+  .hero-chips .chip { background: var(--surface); height: 24px; }
+
+  .quick {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    margin-top: 34px; background: var(--line);
+    border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+  }
+  .quick > div { background: var(--surface); padding: 16px 16px 15px; }
+  .quick dt { font: 600 9.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); margin: 0 0 8px; }
+  .quick dd { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--text); font-weight: 500; }
+  .quick dd span { display: block; color: var(--text-3); font-weight: 400; font-size: 11.5px; margin-top: 3px; }
+
+  /* ---------- sections ---------- */
+  .section { padding: 62px 0 8px; }
+  .section + .section { border-top: 1px solid var(--line); }
+  .section-head { margin-bottom: 26px; }
+  .sec-num {
+    display: inline-flex; align-items: center; gap: 8px;
+    font: 600 10px/1 var(--mono); letter-spacing: .12em; color: var(--text-3);
+    margin-bottom: 10px;
+  }
+  .sec-num::after { content: ""; width: 28px; height: 1px; background: var(--line-strong); }
+  h2 {
+    margin: 0; font-size: clamp(24px, 3.2vw, 31px); line-height: 1.25;
+    letter-spacing: -.03em; font-weight: 620; text-wrap: balance;
+  }
+  h3 { margin: 38px 0 12px; font-size: 17px; line-height: 1.4; letter-spacing: -.015em; font-weight: 620; }
+  h4 { margin: 24px 0 8px; font-size: 13.5px; letter-spacing: -.005em; font-weight: 620; }
+  p { margin: 0 0 16px; color: var(--text-2); }
+  p strong, li strong { color: var(--text); font-weight: 600; }
+  .section > p { max-width: 70ch; }
+  ul, ol { margin: 0 0 18px; padding-left: 20px; color: var(--text-2); }
+  li { margin: 0 0 7px; padding-left: 2px; }
+  li::marker { color: var(--text-3); }
+  .small { font-size: 12.5px; color: var(--text-3); }
+  .kicker { color: var(--text); font-weight: 600; }
+
+  .anchor {
+    color: var(--text-3); opacity: 0; margin-left: 8px; font-weight: 400;
+    font-family: var(--mono); font-size: .7em; transition: opacity 120ms ease;
+  }
+  h2:hover .anchor, h3:hover .anchor { opacity: .8; }
+
+  /* ---------- code ---------- */
+  .code {
+    margin: 18px 0 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--code-bg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .code-head {
+    display: flex; align-items: center; gap: 10px;
+    height: 34px; padding: 0 10px 0 13px;
+    background: var(--code-head);
+    border-bottom: 1px solid var(--line);
+    font: 500 10.5px/1 var(--mono); color: var(--text-3);
+    letter-spacing: .02em;
+  }
+  .code-head .lang {
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 3px; padding: 3px 5px; font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .code-head .file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .copy {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+    height: 24px; padding: 0 7px; border-radius: 4px;
+    color: var(--text-3); font: 500 10px/1 var(--mono);
+  }
+  .copy:hover { background: var(--muted); color: var(--text); }
+  .copy svg { width: 12px; height: 12px; }
+  .copy.done { color: var(--success); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: 12.3px; line-height: 1.75; color: var(--text); tab-size: 2; }
+  pre code { white-space: pre; }
+  .tok-k { color: #9b3dbf; }      /* keyword */
+  .tok-s { color: #18794e; }      /* string */
+  .tok-c { color: var(--text-3); font-style: italic; } /* comment */
+  .tok-n { color: #b45309; }      /* number/boolean */
+  .tok-t { color: #0077cc; }      /* type */
+  [data-theme="dark"] .tok-k { color: #d8a0f0; }
+  [data-theme="dark"] .tok-s { color: #8fd6ae; }
+  [data-theme="dark"] .tok-n { color: #f0bf7a; }
+  [data-theme="dark"] .tok-t { color: #74c5fb; }
+
+  code.inline, p code, li code, td code, th code, .callout code {
+    font-size: .86em; padding: 1px 5px;
+    background: var(--muted); border: 1px solid var(--line);
+    border-radius: 4px; color: var(--text); white-space: nowrap;
+  }
+  kbd {
+    display: inline-block; font-size: 10.5px; line-height: 1.4; padding: 1px 5px;
+    border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px;
+    background: var(--surface); color: var(--text-2); white-space: nowrap;
+  }
+
+  /* ---------- callouts ---------- */
+  .callout {
+    position: relative;
+    margin: 20px 0 24px; padding: 14px 16px 14px 17px;
+    border: 1px solid var(--line); border-left: 2px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--surface);
+    font-size: 13px; line-height: 1.75; color: var(--text-2);
+  }
+  .callout .tag {
+    display: block; margin-bottom: 5px;
+    font: 600 9.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent);
+  }
+  .callout p { margin: 0 0 6px; font-size: 13px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .callout.warn .tag { color: var(--warn); }
+  .callout.never { border-left-color: var(--danger); background: var(--danger-soft); }
+  .callout.never .tag { color: var(--danger); }
+  .callout.good { border-left-color: var(--success); background: var(--success-soft); }
+  .callout.good .tag { color: var(--success); }
+
+  /* ---------- tables ---------- */
+  .table-wrap { margin: 18px 0 24px; border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; line-height: 1.65; }
+  th, td { padding: 10px 13px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th {
+    background: var(--code-head); color: var(--text-3);
+    font: 600 9.5px/1.4 var(--mono); letter-spacing: .07em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: 0; }
+  td { color: var(--text-2); }
+  td:first-child { color: var(--text); }
+  td code { font-size: .9em; white-space: normal; overflow-wrap: anywhere; }
+  .table-note { margin: -12px 0 22px; font-size: 11.5px; color: var(--text-3); }
+
+  /* ---------- diagram ---------- */
+  .flow {
+    margin: 22px 0 26px; padding: 20px;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background:
+      radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 8%, transparent) 1px, transparent 0) 0 0 / 16px 16px,
+      var(--surface);
+  }
+  .flow-row { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
+  .flow-node {
+    flex: 1 1 0; min-width: 120px;
+    border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+    background: var(--surface); padding: 10px 12px;
+    box-shadow: var(--shadow);
+  }
+  .flow-node .fn-t { display: block; font: 600 11.5px/1.4 var(--mono); color: var(--text); }
+  .flow-node .fn-d { display: block; font-size: 10.5px; line-height: 1.5; color: var(--text-3); margin-top: 3px; }
+  .flow-node.core { border-color: var(--accent-line); background: var(--accent-soft); }
+  .flow-arrow {
+    flex: 0 0 26px; display: grid; place-items: center;
+    color: var(--text-3); font: 12px/1 var(--mono);
+  }
+  .flow-legend { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; font: 500 10px/1.5 var(--mono); color: var(--text-3); }
+  .flow-legend span:last-child { text-align: right; }
+
+  /* ---------- cards ---------- */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 20px 0 26px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .card { background: var(--surface); padding: 16px; }
+  .card h4 { margin: 0 0 6px; font-size: 12.5px; display: flex; align-items: center; gap: 7px; }
+  .card h4 .mini { font: 600 9px/1 var(--mono); color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 3px 4px; }
+  .card p { margin: 0; font-size: 12px; line-height: 1.65; color: var(--text-3); }
+
+  /* ---------- steps ---------- */
+  .steps { counter-reset: step; list-style: none; margin: 20px 0 26px; padding: 0; }
+  .steps > li {
+    counter-increment: step; position: relative;
+    margin: 0; padding: 0 0 20px 38px;
+    border-left: 1px solid var(--line); margin-left: 11px;
+  }
+  .steps > li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .steps > li::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute; left: -12px; top: -3px;
+    width: 24px; height: 24px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--surface); border: 1px solid var(--line-strong);
+    color: var(--text-3); font: 600 9px/1 var(--mono);
+  }
+  .steps > li strong { display: block; color: var(--text); font-size: 13.5px; margin-bottom: 4px; }
+  .steps > li p { margin: 0; font-size: 12.5px; line-height: 1.7; }
+
+  /* ---------- checklist ---------- */
+  .check { list-style: none; margin: 18px 0 24px; padding: 0; border-top: 1px solid var(--line); }
+  .check li {
+    display: grid; grid-template-columns: 20px 1fr; gap: 10px;
+    margin: 0; padding: 11px 0; border-bottom: 1px solid var(--line);
+    font-size: 12.8px; line-height: 1.7; color: var(--text-2);
+  }
+  .check .box { width: 14px; height: 14px; margin-top: 3px; border: 1px solid var(--line-strong); border-radius: 3px; background: var(--surface); }
+  .check strong { color: var(--text); }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 20px 0 22px; }
+  .split .panel { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; background: var(--surface); }
+  .split .panel h4 { margin: 0 0 8px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .split ul { margin: 0; padding-left: 17px; font-size: 12.3px; line-height: 1.7; }
+  .split li { margin-bottom: 4px; }
+
+  .doc-list { border-top: 1px solid var(--line); margin: 18px 0 0; }
+  .doc-list a {
+    display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: baseline;
+    padding: 12px 2px; border-bottom: 1px solid var(--line);
+  }
+  .doc-list a:hover .dl-t { color: var(--accent); }
+  .dl-t { font-size: 13px; color: var(--text); font-weight: 500; }
+  .dl-d { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; font-weight: 400; }
+  .dl-p { font: 10px/1.5 var(--mono); color: var(--text-3); white-space: nowrap; }
+
+  footer {
+    margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    font-size: 11.5px; color: var(--text-3);
+  }
+  footer code { font-size: 10.5px; }
+
+  .back-top {
+    position: fixed; right: 22px; bottom: 22px; z-index: 40;
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--surface); border: 1px solid var(--line);
+    color: var(--text-2); box-shadow: var(--shadow-lg);
+    opacity: 0; pointer-events: none; transform: translateY(6px);
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+  .back-top.show { opacity: 1; pointer-events: auto; transform: none; }
+  .back-top:hover { color: var(--accent); border-color: var(--accent-line); }
+  .back-top svg { width: 14px; height: 14px; }
+
+  .overlay { display: none; }
+
+  @media (max-width: 1080px) {
+    .rail { transform: translateX(-100%); transition: transform 180ms ease; z-index: 55; box-shadow: var(--shadow-lg); }
+    body.nav-open .rail { transform: none; }
+    body.nav-open .overlay { display: block; position: fixed; inset: var(--top) 0 0; z-index: 54; background: rgba(0,0,0,.28); }
+    .main { margin-left: 0; }
+    .doc { width: min(100% - 48px, 800px); }
+    .nav-toggle { display: grid; }
+    .brand-sub { display: none; }
+  }
+  @media (max-width: 760px) {
+    .doc { width: min(100% - 36px, 800px); }
+    .hero { padding-top: 48px; }
+    h1 { font-size: 36px; }
+    .lede { font-size: 15.5px; }
+    .quick { grid-template-columns: 1fr; }
+    .cards, .split { grid-template-columns: 1fr; }
+    .flow-row { flex-direction: column; }
+    .flow-arrow { flex-basis: 22px; transform: rotate(90deg); }
+    .top-meta { display: none; }
+    th, td { padding: 9px 10px; }
+    pre { font-size: 11.5px; padding: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+  @media print {
+    .topbar, .rail, .back-top, .copy, .overlay { display: none !important; }
+    .main { margin: 0; }
+    .doc { width: 100%; padding: 0; }
+    .section { break-inside: avoid; }
+    .code { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="top-btn nav-toggle" id="navToggle" aria-label="목차 열기" aria-expanded="false">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg>
+  </button>
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 2.2 3 13.8M8 2.2l5 11.6M5.2 9.6h5.6"/></svg>
+    </span>
+    <span class="brand-name">alid</span>
+    <span class="brand-sub">Extension Template Guide</span>
+  </div>
+  <div class="topbar-spacer"></div>
+  <div class="top-meta">
+    <span class="chip"><span class="dot"></span>API 2</span>
+    <span class="chip">Node 22.12+</span>
+  </div>
+  <button class="top-btn" id="themeToggle" aria-label="테마 전환">
+    <svg id="iconSun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="3"/><path d="M8 1.2v1.4M8 13.4v1.4M1.2 8h1.4M13.4 8h1.4M3.2 3.2l1 1M11.8 11.8l1 1M12.8 3.2l-1 1M4.2 11.8l-1 1"/></svg>
+    <svg id="iconMoon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="display:none"><path d="M13.3 9.6A5.6 5.6 0 0 1 6.4 2.7a5.6 5.6 0 1 0 6.9 6.9Z"/></svg>
+  </button>
+</header>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="문서 목차">
+    <p class="rail-label">Contents</p>
+    <ol class="toc" id="toc">
+      <li><a href="#overview"><span class="n">01</span>이 템플릿</a></li>
+      <li><a href="#start"><span class="n">02</span>5분 안에 시작하기</a></li>
+      <li><a href="#anatomy"><span class="n">03</span>파일과 계약 흐름</a></li>
+      <li><a href="#package"><span class="n">04</span>패키지 계약</a></li>
+      <li><a href="#manifest"><span class="n">05</span>설치 명세</a></li>
+      <li><a href="#aspect"><span class="n">06</span>객체 어스펙트</a></li>
+      <li><a href="#ui"><span class="n">07</span>UI 기여</a></li>
+      <li><a href="#creation"><span class="n">08</span>생성과 명령</a></li>
+      <li><a href="#lifecycle"><span class="n">09</span>활성화·정리·의존성</a></li>
+      <li><a href="#watch"><span class="n">10</span>watch 모드</a></li>
+      <li><a href="#ship"><span class="n">11</span>배포와 설치</a></li>
+      <li><a href="#invariants"><span class="n">12</span>불변식과 안티패턴</a></li>
+      <li><a href="#verify"><span class="n">13</span>검증과 문서 지도</a></li>
+    </ol>
+    <div class="rail-note">
+      이 페이지는 <code>README.md</code>·<code>AGENTS.md</code>·<code>docs/api.md</code>를 확장 개발자 관점으로 다시 읽도록 정리한 웹 문서입니다. 기준 릴리스는 <strong>0.3.0</strong>, 설치 형식은 <strong>API 2</strong>입니다.
+      <div class="rail-links">
+        <a href="../README.md">README</a>
+        <a href="../AGENTS.md">AGENTS</a>
+        <a href="./api.md">API</a>
+        <a href="../extension.json">extension.json</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <article class="doc">
+
+      <!-- ============ HERO ============ -->
+      <header class="hero">
+        <p class="eyebrow">Extension Template · Developer Guide</p>
+        <h1>확장 하나를,<br><em>저장소 하나</em>로.</h1>
+        <p class="lede">
+          이 저장소는 alid 앱이나 커널이 아니라, GitHub에서 바로 설치하는 독립 확장 템플릿입니다.
+          모노레포도, Rust/Wasm 빌드도, npm SDK 설치도 필요하지 않습니다. 공개
+          <code>ExtensionPackageSpec</code> 구조 계약과 단일 ESM 번들만으로 동작합니다.
+        </p>
+        <div class="hero-chips">
+          <span class="chip">JavaScript</span>
+          <span class="chip">Node 22.12+</span>
+          <span class="chip">pnpm 11.22.0</span>
+          <span class="chip">설치 API 2</span>
+          <span class="chip">단일 ESM 번들</span>
+        </div>
+
+        <dl class="quick">
+          <div>
+            <dt>배포 산출물</dt>
+            <dd>dist/plugin.js<span>단일 ES 모듈 · Blob URL 실행</span></dd>
+          </div>
+          <div>
+            <dt>설치 계약</dt>
+            <dd>alid.extension.json<span>apiVersion 2 · SHA-256 · 커밋 고정</span></dd>
+          </div>
+          <div>
+            <dt>검증</dt>
+            <dd>pnpm test<span>빌드 계약 + Node 회귀 테스트</span></dd>
+          </div>
+        </dl>
+      </header>
+
+      <!-- ============ 01 ============ -->
+      <section class="section" id="overview">
+        <div class="section-head">
+          <span class="sec-num">01</span>
+          <h2>이 템플릿으로 만드는 것<a class="anchor" href="#overview">#</a></h2>
+        </div>
+
+        <p>
+          예제는 <strong>스티키 노트</strong>입니다. 캔버스 도구 선반에 추가 버튼을 제공하고,
+          노트의 제목·메모·배경색을 속성 패널에서 편집합니다. 생성과 속성 편집은 호스트의
+          단일 Undo 타임라인을 사용하며, 설치나 화면 열람만으로 문서를 만들지 않습니다.
+        </p>
+
+        <div class="flow" role="img" aria-label="계약 흐름: extension.json에서 manifest를 거쳐 번들과 설치 명세로 만들어진다">
+          <div class="flow-row">
+            <div class="flow-node"><span class="fn-t">extension.json</span><span class="fn-d">ID · 버전 · 요약 · 의존성</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node"><span class="fn-t">src/manifest.js</span><span class="fn-d">런타임·빌드 공용 계약</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node core"><span class="fn-t">src/index.js</span><span class="fn-d">어스펙트 · UI · activate</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node"><span class="fn-t">dist/plugin.js</span><span class="fn-d">기본 export 1개</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node"><span class="fn-t">GitHub 설치</span><span class="fn-d">alid.extension.json + SHA-256</span></div>
+          </div>
+          <div class="flow-legend">
+            <span>한 방향으로만 흐르는 계약</span>
+            <span>생성 산출물은 직접 편집하지 않는다</span>
+          </div>
+        </div>
+
+        <div class="callout">
+          <span class="tag">세 가지 경계</span>
+          <p><strong>저장소</strong> — 앱·커널과 분리된 독립 GitHub 저장소. 별도 웹 호스팅·npm 배포가 필요 없습니다.</p>
+          <p><strong>실행</strong> — 사용자가 승인한 뒤 앱 안에서 실행되는 <strong>신뢰 확장</strong>입니다. 샌드박스가 아닙니다.</p>
+          <p><strong>데이터</strong> — 문서에는 사용자 의도만 저장합니다. 파생 기하·DOM 측정·타이머·Blob URL은 정본이 아닙니다.</p>
+        </div>
+
+        <p>
+          새 확장을 만들 때만 <code>example.sticky-notes</code>를 고유 네임스페이스로 바꿉니다.
+          기존 확장을 업데이트할 때는 ID와 어스펙트 ID를 유지하고 <code>version</code>만 올립니다.
+          이 저장소의 공개 설치본과 내 저장소를 동시에 설치하려면 먼저 ID를 바꿔야 합니다.
+        </p>
+      </section>
+
+      <!-- ============ 02 ============ -->
+      <section class="section" id="start">
+        <div class="section-head">
+          <span class="sec-num">02</span>
+          <h2>5분 안에 시작하기<a class="anchor" href="#start">#</a></h2>
+        </div>
+
+        <p>
+          Node.js <strong>22.12 이상</strong>과 <code>package.json</code>에 고정된
+          <strong>pnpm 11.22.0</strong>을 사용합니다. 이 저장소에는 별도 <code>typecheck</code>나
+          Rust 테스트 명령이 없습니다. 존재하지 않는 명령을 완료 검증으로 보고하지 마세요.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">sh</span><span class="file">terminal</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>pnpm install --frozen-lockfile
+pnpm <span class="tok-k">test</span>          <span class="tok-c"># 배포 번들을 빌드한 뒤 모든 Node 계약 테스트 실행</span>
+pnpm check:dist    <span class="tok-c"># 재빌드 후 커밋된 산출물과 차이가 없는지 확인</span>
+
+pnpm dev           <span class="tok-c"># watch 빌드 + http://127.0.0.1:5174</span>
+pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 테스트 watch</span></code></pre>
+        </div>
+
+        <ol class="steps">
+          <li><strong>저장소 만들기</strong><p>이 저장소에서 <em>Use this template → Create a new repository</em>를 선택하고 공개 저장소를 만듭니다.</p></li>
+          <li><strong>ID와 메타데이터 바꾸기</strong><p><code>extension.json</code>의 <code>id</code>, <code>title</code>, <code>version</code>, <code>summary</code>를 수정합니다. <code>id</code>에는 <code>yourname.reading-notes</code>처럼 고유한 네임스페이스를 사용합니다.</p></li>
+          <li><strong>연결하고 수정하기</strong><p><code>pnpm dev</code>가 표시한 주소를 alid의 <strong>확장 관리 → 개발 중인 확장 연결</strong>에 입력하고 승인합니다. <code>src/index.js</code>를 저장하면 캔버스에 바로 반영됩니다.</p></li>
+          <li><strong>빌드 산출물 커밋</strong><p>마무리 전에 <code>pnpm test</code>를 실행하고, 소스와 함께 <code>dist/plugin.js</code>, <code>alid.extension.json</code>, <code>pnpm-lock.yaml</code>을 커밋합니다.</p></li>
+        </ol>
+
+        <div class="callout warn">
+          <span class="tag">API 2만 지원</span>
+          <p>
+            <code>engine: "^0.1.0"</code>은 커널 호환 범위이고, 설치 형식은 <code>apiVersion: 2</code>입니다.
+            둘은 별개이므로 커널 버전만 보고 설치 가능 여부를 판단하지 마세요. API 1 매니페스트와
+            캐시는 실행 전에 거부되며 자동 변환되지 않습니다.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ 03 ============ -->
+      <section class="section" id="anatomy">
+        <div class="section-head">
+          <span class="sec-num">03</span>
+          <h2>파일과 계약 흐름<a class="anchor" href="#anatomy">#</a></h2>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>파일</th><th>책임 / 수정 원칙</th></tr></thead>
+            <tbody>
+              <tr><td><code>extension.json</code></td><td>ID·제목·버전·요약·커널 범위·의존성·서비스/HSM 선언의 원본</td></tr>
+              <tr><td><code>src/manifest.js</code></td><td>번들과 설치 명세가 공유하는 계약. 어스펙트 ID는 <code>${metadata.id}.note</code></td></tr>
+              <tr><td><code>src/index.js</code></td><td>어스펙트·순수 파생·DOM/SVG·선언형 UI·명령·활성화/정리</td></tr>
+              <tr><td><code>scripts/validate-config.mjs</code></td><td>ID·버전 범위·의존성·제공 선언 검증</td></tr>
+              <tr><td><code>scripts/install-manifest.mjs</code></td><td>설치 API·진입점·SHA-256·어스펙트 목록·<code>capabilities</code> 생성</td></tr>
+              <tr><td><code>scripts/build.mjs</code>, <code>vite.config.js</code></td><td>단일 ESM 번들 빌드와 공유 import/출력 검사</td></tr>
+              <tr><td><code>scripts/dev.mjs</code></td><td>watch 빌드와 로컬 개발 서버. 출력은 <code>.alid-dev/</code></td></tr>
+              <tr><td><code>test/*.test.mjs</code></td><td>번들 계약·파생·생성·정리·설정·개발 서버 회귀</td></tr>
+              <tr><td><code>dist/plugin.js</code></td><td><strong>Git에 포함하는 생성 산출물.</strong> 직접 편집하지 않고 <code>pnpm build</code>로 갱신</td></tr>
+              <tr><td><code>alid.extension.json</code></td><td><strong>Git에 포함하는 설치 명세.</strong> 빌드가 생성</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          어스펙트나 명령을 추가·변경하면 런타임만 고치지 말고 공통 계약, 설치 메타데이터,
+          테스트, API 안내를 함께 확인합니다. 현재 <code>extension.json</code>의
+          <code>provides</code>에는 <code>services</code>와 <code>hsmSlots</code>만 허용되고,
+          어스펙트는 <code>src/manifest.js</code>가 <code>provides.aspects</code>로 생성합니다.
+        </p>
+
+        <div class="callout never">
+          <span class="tag">생성 산출물을 손으로 고치지 않습니다</span>
+          <p>
+            <code>dist/plugin.js</code>와 <code>alid.extension.json</code>은 같은 빌드에서 함께
+            생성되어야 합니다. SHA-256을 수동으로 적거나 해시 검사를 끄면 설치가 거부되거나
+            검토한 코드와 실행 코드가 달라집니다.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ 04 ============ -->
+      <section class="section" id="package">
+        <div class="section-head">
+          <span class="sec-num">04</span>
+          <h2>패키지 계약<a class="anchor" href="#package">#</a></h2>
+        </div>
+
+        <p>
+          번들의 기본 export는 <code>ExtensionPackageSpec</code> 형태의 객체 하나입니다.
+          필수는 <code>id</code>, <code>version</code>, <code>summary</code>이고,
+          <code>aspects</code>, <code>ui</code>, <code>activate</code>는 기능에 따라 생략할 수 있습니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">js</span><span class="file">src/index.js (구조)</span><button class="copy" data-copy>복사</button></div>
+          <pre><code><span class="tok-k">export</span> <span class="tok-k">default</span> {
+  ...createPackageManifest(metadata),  <span class="tok-c">// id·version·engine·의존성·provides</span>
+  summary: metadata.summary,
+
+  aspects: [note],
+  ui: { controls: [createButton] },
+
+  activate(context) {
+    <span class="tok-c">// 명령·서비스·이벤트를 등록하고 정리 함수를 반환한다.</span>
+    <span class="tok-k">return</span> () =&gt; {};
+  },
+};</code></pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>필드</th><th>의미</th><th>주의</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>설치 단위의 논리 확장 ID</td><td>점 포함. 새 확장에서만 변경</td></tr>
+              <tr><td><code>version</code></td><td>확장 릴리스 버전</td><td><code>MAJOR.MINOR.PATCH</code> 정식 릴리스</td></tr>
+              <tr><td><code>engine</code></td><td>커널 호환 범위</td><td>설치 API 버전과 별개</td></tr>
+              <tr><td><code>summary</code></td><td>확장 관리·검토 화면의 한 줄 설명</td><td>설치 명세와 일치</td></tr>
+              <tr><td><code>dependencies</code></td><td>필수 공급자</td><td>키는 npm 이름이 아니라 <strong>alid 논리 확장 ID</strong></td></tr>
+              <tr><td><code>optionalDependencies</code></td><td>선택 공급자</td><td>없어도 소비자가 동작해야 함</td></tr>
+              <tr><td><code>conflicts</code></td><td>동시에 켤 수 없는 확장 ID</td><td>빈 배열도 명시</td></tr>
+              <tr><td><code>provides</code></td><td><code>services</code>, <code>aspects</code>, <code>hsmSlots</code></td><td>소유·제공 계약. 접근 의도와 다름</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          <code>activate</code>는 <code>undefined</code>, 정리 함수, 또는
+          <code>{ api, dispose }</code>를 반환합니다. <code>dispose</code>는 비활성화·일시정지·
+          다시 불러오기·제거 시 호출됩니다. 여러 자원을 만들었다면 생성의 역순으로 정리하고,
+          이전 활성화에서 폐기한 자원을 다음 활성화에서 재사용하지 않습니다.
+        </p>
+      </section>
+
+      <!-- ============ 05 ============ -->
+      <section class="section" id="manifest">
+        <div class="section-head">
+          <span class="sec-num">05</span>
+          <h2>설치 명세<a class="anchor" href="#manifest">#</a></h2>
+        </div>
+
+        <p>
+          호스트는 공개 GitHub 저장소의 기본 브랜치를 커밋 SHA로 고정한 뒤, 같은 커밋에서
+          <code>alid.extension.json</code>과 번들을 읽습니다. 아래는 스티키 노트 기준의
+          생성 예시이며, 실제 파일은 <code>pnpm build</code>가 만듭니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">json</span><span class="file">alid.extension.json</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>{
+  <span class="tok-s">"apiVersion"</span>: <span class="tok-n">2</span>,
+  <span class="tok-s">"id"</span>: <span class="tok-s">"example.sticky-notes"</span>,
+  <span class="tok-s">"title"</span>: <span class="tok-s">"스티키 노트"</span>,
+  <span class="tok-s">"version"</span>: <span class="tok-s">"0.3.0"</span>,
+  <span class="tok-s">"engine"</span>: <span class="tok-s">"^0.1.0"</span>,
+  <span class="tok-s">"dependencies"</span>: {},
+  <span class="tok-s">"optionalDependencies"</span>: {},
+  <span class="tok-s">"conflicts"</span>: [],
+  <span class="tok-s">"provides"</span>: {
+    <span class="tok-s">"services"</span>: [],
+    <span class="tok-s">"aspects"</span>: [<span class="tok-s">"example.sticky-notes.note"</span>],
+    <span class="tok-s">"hsmSlots"</span>: []
+  },
+  <span class="tok-s">"summary"</span>: <span class="tok-s">"캔버스에 짧은 메모를 추가하고 내용과 색상을 편집합니다."</span>,
+  <span class="tok-s">"entry"</span>: <span class="tok-s">"dist/plugin.js"</span>,
+  <span class="tok-s">"sha256"</span>: <span class="tok-s">"빌드 시 생성되는 64자리 SHA-256"</span>,
+  <span class="tok-s">"aspectIds"</span>: [<span class="tok-s">"example.sticky-notes.note"</span>],
+  <span class="tok-s">"capabilities"</span>: {
+    <span class="tok-s">"readAspects"</span>: [
+      <span class="tok-s">"example.sticky-notes.note"</span>, <span class="tok-s">"core.transform"</span>, <span class="tok-s">"core.bounds"</span>
+    ],
+    <span class="tok-s">"writeAspects"</span>: [
+      <span class="tok-s">"example.sticky-notes.note"</span>, <span class="tok-s">"core.transform"</span>, <span class="tok-s">"core.bounds"</span>
+    ],
+    <span class="tok-s">"services"</span>: [<span class="tok-s">"canvas.creation"</span>],
+    <span class="tok-s">"commands"</span>: [<span class="tok-s">"example.sticky-notes:add-note"</span>]
+  }
+}</code></pre>
+        </div>
+
+        <p>
+          <code>capabilities</code>는 접근 의도를 설명합니다. 접근을 허가하거나 코드 전체를
+          격리하는 권한 목록이 아닙니다. <code>dependencies</code>·<code>provides</code>는
+          서비스와 공개 API의 의존성 검증에 사용됩니다.
+        </p>
+
+        <div class="callout warn">
+          <span class="tag">설치 명세와 번들은 같은 빌드에서</span>
+          <p>
+            <code>id</code>, <code>version</code>, <code>engine</code>, 두 의존성 맵,
+            <code>conflicts</code>, <code>provides</code>는 번들의 값과 정확히 일치해야 합니다.
+            <code>src/manifest.js</code>가 두 경로의 공통 값을 만들므로 생성 파일에 따로 적지 마세요.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ 06 ============ -->
+      <section class="section" id="aspect">
+        <div class="section-head">
+          <span class="sec-num">06</span>
+          <h2>객체 어스펙트<a class="anchor" href="#aspect">#</a></h2>
+        </div>
+
+        <p>
+          어스펙트는 문서에 저장할 속성과 읽기 전용 파생·표시 동작을 정의합니다. 스티키 노트의
+          어스펙트 ID는 <code>${metadata.id}.note</code>이며, ID를 바꾸면 기존 문서와의
+          호환성이 끊깁니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">js</span><span class="file">src/index.js (어스펙트)</span><button class="copy" data-copy>복사</button></div>
+          <pre><code><span class="tok-k">const</span> aspectId = <span class="tok-s">`${metadata.id}.note`</span>;
+<span class="tok-k">const</span> defaults = {
+  title: <span class="tok-s">'작은 생각'</span>,
+  body: <span class="tok-s">'이 메모를 선택하고 속성에서 내용을 바꿔 보세요.'</span>,
+  color: <span class="tok-s">'#f5f3ff'</span>,
+};
+
+<span class="tok-k">function</span> derive(_props, id, view) {
+  <span class="tok-k">const</span> transform = view.getCanonical(id, <span class="tok-s">'core.transform'</span>) ?? {};
+  <span class="tok-k">const</span> bounds = view.getCanonical(id, <span class="tok-s">'core.bounds'</span>) ?? {};
+  <span class="tok-k">return</span> {
+    x: finite(transform.x, <span class="tok-n">0</span>),
+    y: finite(transform.y, <span class="tok-n">0</span>),
+    width: positive(bounds.width, <span class="tok-n">240</span>),
+    height: positive(bounds.height, <span class="tok-n">160</span>),
+    rotation: finite(transform.rotation, <span class="tok-n">0</span>),
+  };
+}
+
+<span class="tok-k">const</span> note = {
+  id: aspectId,
+  label: <span class="tok-s">'스티키 노트'</span>,
+  summary: metadata.summary,
+  defaults,
+  textFields: [<span class="tok-s">'title'</span>, <span class="tok-s">'body'</span>],
+  textSearchFields: [<span class="tok-s">'title'</span>, <span class="tok-s">'body'</span>],
+  dependsOnCanonical: [aspectId, <span class="tok-s">'core.transform'</span>, <span class="tok-s">'core.bounds'</span>],
+  dependsOnComputed: [],
+  derive,
+
+  renderDom(content, props, geometry) {
+    <span class="tok-c">// 호스트가 준 콘텐츠 컨테이너만 소유한다. 외곽 좌표·회전은 호스트 몫.</span>
+    <span class="tok-k">if</span> (!geometry) <span class="tok-k">return</span>;
+    content.innerHTML = <span class="tok-s">`&lt;svg ...&gt;${noteBody(props, geometry)}&lt;/svg&gt;`</span>;
+  },
+
+  renderSvg(props, geometry) {
+    <span class="tok-k">if</span> (!geometry) <span class="tok-k">return</span> { svg: <span class="tok-s">''</span> };
+    <span class="tok-k">const</span> { x, y, width, height, rotation } = geometry;
+    <span class="tok-k">return</span> {
+      svg: <span class="tok-s">`&lt;g transform="translate(${x},${y}) rotate(${rotation * 180 / Math.PI},${width / 2},${height / 2})"&gt;`</span>
+        + noteBody(props, geometry) + <span class="tok-s">'&lt;/g&gt;'</span>,
+    };
+  },
+};</code></pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>필드</th><th>의미</th></tr></thead>
+            <tbody>
+              <tr><td><code>defaults</code></td><td>JSON으로 저장 가능한 속성 기본값</td></tr>
+              <tr><td><code>textFields</code></td><td>협업 텍스트로 취급하는 <code>defaults</code> 필드</td></tr>
+              <tr><td><code>textSearchFields</code></td><td>검색 대상 텍스트 필드</td></tr>
+              <tr><td><code>dependsOnCanonical</code></td><td>파생 계산이 읽는 정본 어스펙트 목록</td></tr>
+              <tr><td><code>derive()</code></td><td>정본을 읽어 화면용 기하를 반환하는 <strong>순수 함수</strong></td></tr>
+              <tr><td><code>renderDom()</code></td><td>호스트가 준 콘텐츠 컨테이너에 표시</td></tr>
+              <tr><td><code>renderSvg()</code></td><td><code>{ svg: 문자열 }</code> 반환. 그리기 순서는 호스트가 결정</td></tr>
+              <tr><td><code>layout</code></td><td><code>true</code>면 파생 결과가 공용 레이아웃 박스 (자동 크기)</td></tr>
+              <tr><td><code>paintBounds()</code></td><td>박스 없는 객체가 그리는 월드 박스</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout never">
+          <span class="tag">저장하지 않는 것</span>
+          <p>
+            파생 좌표·DOM 측정값·함수·DOM 노드·타이머·Blob URL·카메라·선택·패널 상태는
+            정본이 아닙니다. <code>derive</code> 안에서 문서를 쓰거나 DOM·네트워크에 접근하지
+            마세요. 누락·잘못된 숫자에는 유한하고 결정론적인 기하를 반환합니다.
+          </p>
+        </div>
+
+        <p class="small">
+          회전은 라디안입니다. 사용자 문자열은 DOM/SVG 삽입 시 이스케이프하고, 색상 값도
+          검증합니다. 원문을 <code>innerHTML</code>이나 SVG 속성에 그대로 넣지 마세요.
+          그리기 순서는 호스트의 단일 Z축(<code>core.stacking</code>)이 소유하며, 확장은
+          <code>zOrder</code>·<code>layer</code>를 반환하지 않습니다.
+        </p>
+      </section>
+
+      <!-- ============ 07 ============ -->
+      <section class="section" id="ui">
+        <div class="section-head">
+          <span class="sec-num">07</span>
+          <h2>UI 기여<a class="anchor" href="#ui">#</a></h2>
+        </div>
+
+        <p>
+          생성 버튼은 <strong>설치 단위</strong>의 <code>ui.controls</code>에
+          <code>tool-shelf</code> action으로 기여합니다. 속성 컨트롤은 <strong>어스펙트</strong>의
+          <code>ui.controls</code>에 두고, <code>field</code>는 그 어스펙트의 <code>defaults</code>에
+          존재하는 속성을 가리킵니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">js</span><span class="file">설치 단위의 도구 선반 버튼</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>ui: {
+  controls: [{
+    id: <span class="tok-s">'add-note'</span>,
+    kind: <span class="tok-s">'action'</span>,
+    label: <span class="tok-s">'스티키 노트 추가'</span>,
+    icon: <span class="tok-s">'document'</span>,
+    commandSymbol: <span class="tok-s">'example.sticky-notes:add-note'</span>,
+    placement: <span class="tok-s">'tool-shelf'</span>,
+    requiresSelection: <span class="tok-n">false</span>,
+  }],
+}</code></pre>
+        </div>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">js</span><span class="file">어스펙트의 속성 컨트롤</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>ui: {
+  controls: [
+    { id: <span class="tok-s">'note-title'</span>, kind: <span class="tok-s">'text'</span>,  field: <span class="tok-s">'title'</span>, label: <span class="tok-s">'제목'</span>,   placement: <span class="tok-s">'inspector'</span> },
+    { id: <span class="tok-s">'note-body'</span>,  kind: <span class="tok-s">'text'</span>,  field: <span class="tok-s">'body'</span>,  label: <span class="tok-s">'메모'</span>,   placement: <span class="tok-s">'inspector'</span> },
+    { id: <span class="tok-s">'note-color'</span>, kind: <span class="tok-s">'color'</span>, field: <span class="tok-s">'color'</span>, label: <span class="tok-s">'배경색'</span>, placement: <span class="tok-s">'inspector'</span> },
+  ],
+}</code></pre>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>종류</th><th>필드</th><th>설명</th></tr></thead>
+            <tbody>
+              <tr><td><code>text</code></td><td><code>field</code></td><td>한 줄 텍스트</td></tr>
+              <tr><td><code>number</code>, <code>slider</code></td><td><code>field</code>, <code>min</code>, <code>max</code>, <code>step</code></td><td>수치 편집</td></tr>
+              <tr><td><code>color</code></td><td><code>field</code></td><td>CSS 색상 값</td></tr>
+              <tr><td><code>toggle</code></td><td><code>field</code></td><td>불리언</td></tr>
+              <tr><td><code>segmented</code></td><td><code>field</code>, <code>options</code></td><td>선택지</td></tr>
+              <tr><td><code>action</code></td><td><code>commandSymbol</code></td><td>명령 실행. 선택 요구·활성 도구 상태 선언 가능</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="small">
+          <code>commandSymbol</code>은 등록한 명령 ID와 같아야 합니다. 선택 없이 생성해야 하면
+          <code>requiresSelection: false</code>를 선언합니다. 호스트의 툴바·인스펙터 DOM을 직접
+          수정하지 마세요. 호스트가 선택된 객체의 필드를 읽고 편집·Undo를 처리합니다.
+        </p>
+      </section>
+
+      <!-- ============ 08 ============ -->
+      <section class="section" id="creation">
+        <div class="section-head">
+          <span class="sec-num">08</span>
+          <h2>생성과 명령<a class="anchor" href="#creation">#</a></h2>
+        </div>
+
+        <p>
+          객체 생성은 <code>canvas.creation</code> 호스트 서비스로 합니다. 서비스가 없으면
+          이 기능을 제공하지 않는 호스트이므로 명확한 오류를 반환합니다.
+          <code>core.transform</code>·<code>core.bounds</code>는 호스트가 작성하므로
+          <code>aspects</code>에 중복 전달하지 않습니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">js</span><span class="file">생성 커맨드</span><button class="copy" data-copy>복사</button></div>
+          <pre><code><span class="tok-k">const</span> creation = context.services.get(<span class="tok-s">'canvas.creation'</span>);
+<span class="tok-k">if</span> (!creation) <span class="tok-k">throw</span> <span class="tok-k">new</span> Error(<span class="tok-s">'canvas.creation 서비스가 필요합니다.'</span>);
+
+<span class="tok-k">return</span> context.commands.register({
+  id: <span class="tok-s">'example.sticky-notes:add-note'</span>,
+  title: <span class="tok-s">'스티키 노트 추가'</span>,
+  summary: <span class="tok-s">'현재 화면에 메모를 추가합니다.'</span>,
+  shortcutScope: <span class="tok-s">'canvas'</span>,
+  run: () =&gt; creation.create({
+    caller: <span class="tok-s">'example.sticky-notes:add-note'</span>,
+    aspects: { <span class="tok-s">'example.sticky-notes.note'</span>: { ...defaults } },
+    width: <span class="tok-n">240</span>,
+    height: <span class="tok-n">160</span>,
+  }),
+});</code></pre>
+        </div>
+
+        <p>
+          <code>creation.create</code>는 생성된 엔티티 ID를 반환하고, 내용·위치·크기를
+          한 정본 배치와 한 Undo 단위로 기록합니다. <code>width</code>와 <code>height</code>는
+          유한한 양수여야 합니다. 명령 ID는 <code>namespace:name</code> 형식이며 제목·설명·
+          실행 콜백이 필요합니다.
+        </p>
+
+        <div class="callout">
+          <span class="tag">설치와 생성은 분리</span>
+          <p>
+            설치·활성화·API 조회·화면 열람만으로 문서 객체를 만들지 않습니다. 쓰기는 사용자의
+            명시적인 명령이나 속성 편집에서만 일어나야 합니다. 읽기 시 쓰기(Read-Triggers-Write)는
+            금지입니다.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ 09 ============ -->
+      <section class="section" id="lifecycle">
+        <div class="section-head">
+          <span class="sec-num">09</span>
+          <h2>활성화·정리·의존성<a class="anchor" href="#lifecycle">#</a></h2>
+        </div>
+
+        <p>
+          예제는 생성 API와 명령 해제 함수를 함께 반환합니다. 비활성화된 뒤의 오래된 API가
+          문서를 바꾸지 않도록 활성 상태를 확인합니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">js</span><span class="file">activate / dispose</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>activate(context) {
+  <span class="tok-k">const</span> creation = context.services.get(<span class="tok-s">'canvas.creation'</span>);
+  <span class="tok-k">if</span> (!creation) <span class="tok-k">throw</span> <span class="tok-k">new</span> Error(<span class="tok-s">'canvas.creation 서비스가 필요합니다.'</span>);
+
+  <span class="tok-k">let</span> active = <span class="tok-n">true</span>;
+  <span class="tok-k">const</span> addNote = () =&gt; {
+    <span class="tok-k">if</span> (!active) <span class="tok-k">throw</span> <span class="tok-k">new</span> Error(<span class="tok-s">'비활성화된 API입니다. 다시 조회하세요.'</span>);
+    <span class="tok-k">return</span> creation.create({
+      caller: addNoteCommand,
+      aspects: { [aspectId]: { ...defaults } },
+      width: <span class="tok-n">240</span>,
+      height: <span class="tok-n">160</span>,
+    });
+  };
+
+  <span class="tok-k">const</span> offCommand = context.commands.register({
+    id: addNoteCommand,
+    title: <span class="tok-s">'스티키 노트 추가'</span>,
+    summary: <span class="tok-s">'현재 캔버스 중앙에 메모를 추가합니다.'</span>,
+    shortcutScope: <span class="tok-s">'canvas'</span>,
+    run: addNote,
+  });
+
+  <span class="tok-k">return</span> {
+    api: Object.freeze({ addNote }),
+    dispose() {
+      <span class="tok-k">if</span> (!active) <span class="tok-k">return</span>;
+      active = <span class="tok-n">false</span>;
+      offCommand();
+    },
+  };
+}</code></pre>
+        </div>
+
+        <h3>다른 확장과 연결하기</h3>
+        <p>
+          <code>dependencies</code>는 필요한 공급자를 먼저 켜고,
+          <code>optionalDependencies</code>는 호환되는 공급자가 설치되어 있고 꺼져 있지 않을
+          때만 설치 순서에 참여합니다. 키는 npm 패키지명이 아니라 <strong>alid 논리 확장 ID</strong>이며,
+          선언만으로 다른 저장소를 다운로드하지 않습니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">js</span><span class="file">공급자 API 조회</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>dependencies: { <span class="tok-s">'yourname.reading-notes'</span>: <span class="tok-s">'^0.3.0'</span> },
+optionalDependencies: { <span class="tok-s">'sys.minibuffer'</span>: <span class="tok-s">'^0.1.0'</span> },
+
+activate(context) {
+  <span class="tok-k">const</span> minibuffer = context.getExtensionApi(<span class="tok-s">'sys.minibuffer'</span>); <span class="tok-c">// 없으면 undefined</span>
+  <span class="tok-k">const</span> notes = context.requireExtensionApi(<span class="tok-s">'yourname.reading-notes'</span>);
+  <span class="tok-c">// 선택 API는 호출 시마다 가용성을 확인하고 영구 캐시하지 않는다.</span>
+}</code></pre>
+        </div>
+
+        <p class="small">
+          범위는 정확한 정식 버전·<code>^</code>·<code>~</code>·비교 연산자·와일드카드·공백 AND·
+          <code>||</code> OR를 지원합니다. <code>^0.1.0</code>은 <code>0.1.x</code>,
+          <code>^0.0.1</code>은 <code>0.0.1</code>만 허용합니다. 프리릴리스·빌드 접미사·하이픈
+          범위·축약 버전은 지원하지 않습니다. 직접 서비스를 제공하면
+          <code>provides.services</code>에 선언하고 <code>context.services.provide()</code>의
+          해제 함수를 정리 경로에 넣습니다.
+        </p>
+      </section>
+
+      <!-- ============ 10 ============ -->
+      <section class="section" id="watch">
+        <div class="section-head">
+          <span class="sec-num">10</span>
+          <h2>watch 모드로 개발하기<a class="anchor" href="#watch">#</a></h2>
+        </div>
+
+        <p>
+          <code>pnpm dev</code>는 <code>.alid-dev/</code>에 watch 빌드를 만들고 로컬 서버를
+          엽니다. 기본 주소는 <code>http://127.0.0.1:5174</code>이며, alid의
+          <strong>확장 관리 → 개발 중인 확장 연결</strong>이 이 서버를 구독합니다.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>경로 / 이벤트</th><th>내용</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /alid.extension.json</code></td><td>마지막 성공 빌드의 설치 매니페스트(SHA-256 포함)</td></tr>
+              <tr><td><code>GET /dist/plugin.js</code></td><td>매니페스트가 해시하는 번들. 매니페스트와 원자적으로 교체</td></tr>
+              <tr><td><code>GET /__alid/events</code></td><td>SSE: <code>hello</code>, <code>building</code>, <code>reload</code>, <code>build-error</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ul>
+          <li><strong>연결 범위</strong> — <code>localhost</code>, <code>127.0.0.1</code>만 연결할 수 있습니다. 서버도 <code>127.0.0.1</code>에서 열립니다.</li>
+          <li><strong>출처</strong> — 기본 허용 출처는 <code>http://127.0.0.1:5173</code>, <code>http://localhost:5173</code>입니다. 다른 alid 출처는 <code>pnpm dev --origin https://alid.example</code>로 추가합니다.</li>
+          <li><strong>빌드 실패</strong> — 마지막 성공 빌드가 계속 실행됩니다. 화면이 유지된다고 새 소스가 적용됐다고 판단하지 말고 빌드 번호와 오류를 확인합니다.</li>
+          <li><strong>ID 고정</strong> — 개발 중에는 확장 ID를 바꿀 수 없습니다. 바꿨다면 연결을 끊고 다시 연결합니다.</li>
+          <li><strong>저장 정책</strong> — 개발 코드는 IndexedDB나 문서에 저장하지 않습니다. 새로고침하면 연결이 끊깁니다.</li>
+        </ul>
+
+        <div class="callout warn">
+          <span class="tag">test:watch는 빌드하지 않습니다</span>
+          <p>
+            <code>test:watch</code>의 plugin 테스트는 <code>dist/plugin.js</code>를 읽습니다.
+            최신 소스를 검증하려면 <code>pnpm build</code> 후 watch 테스트를 실행하거나
+            <code>pnpm test</code>를 사용하세요.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ 11 ============ -->
+      <section class="section" id="ship">
+        <div class="section-head">
+          <span class="sec-num">11</span>
+          <h2>배포와 설치<a class="anchor" href="#ship">#</a></h2>
+        </div>
+
+        <p>
+          별도의 웹 호스팅이나 npm 배포는 필요하지 않습니다. 공개 GitHub 저장소의 기본
+          브랜치에 소스와 빌드 산출물을 커밋하면, 사용자가 alid의
+          <strong>확장 관리 → GitHub에서 설치</strong>에 <code>owner/repo</code>를 입력해 설치합니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">sh</span><span class="file">배포</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>pnpm <span class="tok-k">test</span>          <span class="tok-c"># 테스트가 빌드까지 수행한다</span>
+pnpm check:dist    <span class="tok-c"># 커밋된 산출물이 최신인지 확인</span>
+
+git add -A
+git commit -m <span class="tok-s">"feat: add reading note tool"</span>
+git push origin main</code></pre>
+        </div>
+
+        <ol class="steps">
+          <li><strong>커밋 고정</strong><p>호스트가 GitHub API로 기본 브랜치의 커밋 SHA를 조회합니다.</p></li>
+          <li><strong>조회만, 실행 없음</strong><p>같은 커밋에서 매니페스트와 번들을 받아 경로·크기·메타데이터·SHA-256을 검증합니다.</p></li>
+          <li><strong>명시적 신뢰</strong><p>사용자가 확인한 번들을 승인해야 런타임에 등록됩니다. 승인 전에는 코드를 실행하지 않습니다.</p></li>
+          <li><strong>로컬 보관</strong><p>승인한 매니페스트·커밋·코드·사용 상태는 그 브라우저에 저장됩니다. 원격 최신 코드로 자동 변경하지 않습니다.</p></li>
+        </ol>
+
+        <h3>업데이트</h3>
+        <p>
+          같은 <code>owner/repo</code>를 다시 조회하고 새 커밋을 검토해 설치하면 업데이트됩니다.
+          기존 승인만으로 새 코드를 실행하지 않습니다. 기존 사용자에게 업데이트할 때는
+          <code>id</code>와 어스펙트 ID·속성 이름을 유지하고 <code>version</code>을 올립니다.
+          파괴적인 스키마 변경은 새 어스펙트 ID로 분리합니다.
+        </p>
+
+        <h3>번들 경계</h3>
+        <p>
+          설치 코드는 Blob URL에서 실행되므로 하나의 <code>dist/plugin.js</code>여야 합니다.
+          상대 경로 청크·별도 CSS·에셋·런타임 npm 설치에 의존하면 안 됩니다. 호스트 공유
+          모듈만 정확히 외부화합니다.
+        </p>
+
+        <div class="code">
+          <div class="code-head"><span class="lang">text</span><span class="file">vite.config.js 공유 모듈</span><button class="copy" data-copy>복사</button></div>
+          <pre><code>@alid/kernel, @alid/react,
+react, react/jsx-runtime, react/jsx-dev-runtime,
+react-dom, react-dom/client</code></pre>
+        </div>
+
+        <p class="small">
+          호스트의 커널·React를 중복 번들링하거나 내부 <code>src</code> 경로를 import하지
+          않습니다. 현재 예제는 SDK import가 필요 없습니다. React UI가 필요하면 공유
+          <code>@alid/react</code>와 호스트의 루트/포털 계약을 사용하고 별도 React 루트를
+          만들지 마세요.
+        </p>
+      </section>
+
+      <!-- ============ 12 ============ -->
+      <section class="section" id="invariants">
+        <div class="section-head">
+          <span class="sec-num">12</span>
+          <h2>불변식과 안티패턴<a class="anchor" href="#invariants">#</a></h2>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>절대 금지 (NEVER)</th><th>대신 (INSTEAD)</th></tr></thead>
+            <tbody>
+              <tr><td>파생 좌표·DOM 측정 높이를 <code>defaults</code>나 정본에 저장</td><td><code>derive()</code>의 읽기 전용 결과로 계산</td></tr>
+              <tr><td>설치·활성화·API 조회만으로 객체 생성</td><td>사용자의 명시적인 명령·속성 편집에서만 쓰기</td></tr>
+              <tr><td>DOM 콜백에서 외곽 위치·회전·카메라 transform 수정</td><td>호스트 컨테이너 안쪽 콘텐츠만 소유</td></tr>
+              <tr><td><code>renderSvg</code> 없이 DOM 렌더링만 제공</td><td>DOM이 없어도 정본·파생만으로 출판</td></tr>
+              <tr><td><code>innerHTML</code>·SVG 속성에 사용자 원문 삽입</td><td>이스케이프와 색상·속성값 검증</td></tr>
+              <tr><td><code>zOrder</code>·<code>layer</code> 반환, <code>core.stacking</code> 직접 쓰기</td><td>호스트의 단일 Z축과 순서 명령 사용</td></tr>
+              <tr><td>호스트 툴바·인스펙터 DOM 직접 수정</td><td><code>ui.controls</code> 선언형 기여</td></tr>
+              <tr><td>정리 함수 없이 명령·이벤트·타이머 등록</td><td><code>dispose</code>에서 생성 역순으로 해제</td></tr>
+              <tr><td>선택 공급자 API를 영구 캐시</td><td>호출 시마다 가용성 확인</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout never">
+          <span class="tag">문서는 확장보다 오래 산다</span>
+          <p>
+            업데이트 시 기존 어스펙트 ID와 필드 의미를 유지합니다. 가산적 변경을 우선하고,
+            파괴적인 변경은 새 버전의 어스펙트 ID로 분리합니다. 비활성화·제거·리로드에서
+            기존 객체 데이터를 지우지 않습니다.
+          </p>
+        </div>
+
+        <p class="small">
+          텍스트 필드를 추가하면 협업 편집용 <code>textFields</code>와 검색용
+          <code>textSearchFields</code>를 각각 검토합니다. 자체 편집기나 단축키를 추가하면
+          호스트의 공개 입력 계약을 따르고, 한글/CJK 조합 중 <kbd>Enter</kbd>·
+          <kbd>Escape</kbd>·도구 키를 가로채지 않습니다. 일반 입력창의 네이티브 Undo·클립보드를
+          전역 키 리스너로 덮어쓰지 마세요.
+        </p>
+      </section>
+
+      <!-- ============ 13 ============ -->
+      <section class="section" id="verify">
+        <div class="section-head">
+          <span class="sec-num">13</span>
+          <h2>검증과 문서 지도<a class="anchor" href="#verify">#</a></h2>
+        </div>
+
+        <ul class="check">
+          <li><span class="box"></span><span><strong>범위</strong><br>요청 범위만 수정했고 기존 문서의 ID·스키마·데이터를 보존했는가?</span></li>
+          <li><span class="box"></span><span><strong>회귀</strong><br>기능 변경에 맞는 <code>test/*.test.mjs</code>와 README/API 안내를 갱신했는가?</span></li>
+          <li><span class="box"></span><span><strong>빌드 계약</strong><br><code>pnpm test</code>로 실제 배포 번들·설치 계약·해시를 검증했는가?</span></li>
+          <li><span class="box"></span><span><strong>산출물</strong><br><code>dist/plugin.js</code>·<code>alid.extension.json</code>을 포함하고 <code>pnpm check:dist</code>가 통과하는가?</span></li>
+          <li><span class="box"></span><span><strong>런타임 경계</strong><br>활성화만으로 문서를 쓰지 않고, 명시적 편집·정리·재활성화가 기대대로 동작하는가?</span></li>
+          <li><span class="box"></span><span><strong>출판</strong><br>시각 변경이 DOM 없이도 SVG를 만들고 사용자 입력을 안전하게 출력하는가?</span></li>
+        </ul>
+
+        <p>
+          가능하면 호스트에서 <strong>설치 또는 개발 연결 → 생성 → 선택·이동·리사이즈 →
+          속성 편집 → Undo/Redo → 화면 밖 객체 SVG 내보내기 → 비활성화/재활성화·리로드</strong>를
+          확인합니다. 텍스트 입력을 추가했다면 한글 IME도 확인합니다.
+        </p>
+
+        <div class="callout">
+          <span class="tag">정직한 완료 보고</span>
+          <p>
+            Node 테스트는 모의 호스트와 생성 번들의 계약 검증이며, 실제 브라우저·IME·Loro Undo
+            통합 검증이 아닙니다. 완료 보고에는 실행한 명령과 결과, 수동 확인 여부, 미검증
+            범위를 구분합니다. 계측 없이 1,000개 객체의 120fps·0-GC를 달성했다고 주장하지 않습니다.
+          </p>
+        </div>
+
+        <div class="doc-list">
+          <a href="../README.md"><span><span class="dl-t">README</span><span class="dl-d">설치·개발 연결·배포·검증 범위</span></span><span class="dl-p">README.md</span></a>
+          <a href="../AGENTS.md"><span><span class="dl-t">에이전트 개발 지침</span><span class="dl-d">파일별 책임·불변식·완료 체크리스트</span></span><span class="dl-p">AGENTS.md</span></a>
+          <a href="./api.md"><span><span class="dl-t">확장 API 안내</span><span class="dl-d">구조 계약·호스트 서비스·의존성 API</span></span><span class="dl-p">docs/api.md</span></a>
+          <a href="../extension.json"><span><span class="dl-t">확장 메타데이터</span><span class="dl-d">ID·버전·요약·의존성 원본</span></span><span class="dl-p">extension.json</span></a>
+          <a href="../src/index.js"><span><span class="dl-t">실행 예제</span><span class="dl-d">어스펙트·파생·DOM/SVG·UI·activate</span></span><span class="dl-p">src/index.js</span></a>
+          <a href="../src/manifest.js"><span><span class="dl-t">공용 패키지 계약</span><span class="dl-d">번들과 설치 명세가 함께 사용</span></span><span class="dl-p">src/manifest.js</span></a>
+        </div>
+
+        <p class="small">
+          이 페이지는 저장소의 문서를 요약한 개발자 가이드입니다. 계약의 세부 조항과 검증
+          기록은 위 원문이 기준입니다. 문서와 구현이 어긋나면 차이를 확인하고, 호환성 판단이
+          불명확하면 사용자에게 확인하세요.
+        </p>
+      </section>
+
+      <footer>
+        <span>alid extension template · 0.3.0 · API 2</span>
+        <span>근거: <code>README.md</code> · <code>AGENTS.md</code> · <code>docs/api.md</code></span>
+      </footer>
+    </article>
+  </main>
+</div>
+
+<button class="back-top" id="backTop" aria-label="맨 위로">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 13V3M4 7l4-4 4 4"/></svg>
+</button>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var KEY = 'alid:guide:theme';
+
+  function apply(theme) {
+    root.setAttribute('data-theme', theme);
+    document.getElementById('iconSun').style.display = theme === 'dark' ? 'none' : 'block';
+    document.getElementById('iconMoon').style.display = theme === 'dark' ? 'block' : 'none';
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  apply(saved || (prefersDark ? 'dark' : 'light'));
+
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    apply(next);
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+  });
+
+  // Copy buttons
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var code = button.closest('.code').querySelector('pre code');
+      if (!code) return;
+      var text = code.innerText;
+      var done = function () {
+        var old = button.textContent;
+        button.textContent = '복사됨';
+        button.classList.add('done');
+        setTimeout(function () { button.textContent = old; button.classList.remove('done'); }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+      } else {
+        fallback(text, done);
+      }
+    });
+  });
+
+  function fallback(text, done) {
+    var area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(area);
+    area.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(area);
+  }
+
+  // Scroll spy: the last section whose heading has passed the reading line wins.
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var sections = links.map(function (link) {
+    return document.querySelector(link.getAttribute('href'));
+  }).filter(Boolean);
+
+  function setActive(id) {
+    links.forEach(function (link) {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+    });
+  }
+
+  var spyTick = false;
+  function updateSpy() {
+    spyTick = false;
+    if (!sections.length) return;
+    var line = window.scrollY + 132;
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i].getBoundingClientRect().top + window.scrollY <= line) current = sections[i];
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = sections[sections.length - 1];
+    }
+    setActive(current.id);
+  }
+  window.addEventListener('scroll', function () {
+    if (!spyTick) { spyTick = true; window.requestAnimationFrame(updateSpy); }
+  }, { passive: true });
+  window.addEventListener('resize', updateSpy);
+  updateSpy();
+
+  // Back to top
+  var backTop = document.getElementById('backTop');
+  window.addEventListener('scroll', function () {
+    backTop.classList.toggle('show', window.scrollY > 700);
+  }, { passive: true });
+  backTop.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Mobile nav
+  var toggle = document.getElementById('navToggle');
+  var overlay = document.getElementById('overlay');
+  function closeNav() {
+    document.body.classList.remove('nav-open');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+  toggle.addEventListener('click', function () {
+    var open = document.body.classList.toggle('nav-open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  overlay.addEventListener('click', closeNav);
+  links.forEach(function (link) { link.addEventListener('click', closeNav); });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeNav();
+  });
+})();
+</script>
+</body>
+</html>
