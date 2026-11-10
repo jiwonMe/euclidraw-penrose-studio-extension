@@ -8,14 +8,14 @@
 
 ```js
 export default {
-  id: 'yourname.reading-notes',
-  version: '0.3.0',
+  id: 'diagram.penrose-studio',
+  version: '0.1.0',
   engine: '^0.1.0',
   dependencies: {},
   optionalDependencies: {},
   conflicts: [],
-  provides: { aspects: ['yourname.reading-notes.note'], services: [], hsmSlots: [] },
-  summary: '독서 메모를 추가합니다.',
+  provides: { aspects: ['diagram.penrose-studio.diagram'], services: [], hsmSlots: [] },
+  summary: 'Penrose Studio 도해를 추가합니다.',
   aspects: [noteAspect],
   ui: { controls: [createButton] },
   activate(context) {
@@ -29,7 +29,7 @@ export default {
 
 `activate`는 `undefined`, 정리 함수, 또는 `{ api, dispose }`를 반환합니다. `dispose`는 비활성화·일시정지·다시 불러오기·제거 시 호출됩니다. 등록한 명령, 이벤트 리스너, 타이머와 구독을 여기에서 정리하세요. 여러 자원을 만들었다면 생성의 역순으로 정리합니다. 다시 활성화될 수 있으므로 이전 활성화에서 폐기한 자원을 재사용하지 마세요.
 
-스티키 노트는 `{ api: { addNote }, dispose }`를 반환합니다. `addNote()`는 사용자의 명시적인 명령에서 호출할 때 새 노트를 만들고 엔티티 ID를 반환합니다. 활성화나 API 조회만으로 문서가 바뀌지는 않습니다.
+Penrose Studio 도해는 `{ api: { insertDiagram }, dispose }`를 반환합니다. `insertDiagram()`는 사용자의 명시적인 명령에서 호출할 때 새 노트를 만들고 엔티티 ID를 반환합니다. 활성화나 API 조회만으로 문서가 바뀌지는 않습니다.
 
 ## 의존성 API와 서비스
 
@@ -37,22 +37,22 @@ export default {
 
 `context.getExtensionApi(id)`는 직접 선언한 공급자의 활성 API를 반환하며, 선택 공급자가 없거나 꺼져 있거나 버전이 맞지 않으면 `undefined`입니다. `requireExtensionApi(id)`는 사용할 API가 없으면 오류를 던집니다. 선언하지 않은 ID를 조회하면 오류가 납니다. 의존성의 의존성을 간접적으로 열어 주지 않습니다.
 
-다음은 스티키 노트를 사용하는 **별도 확장**의 예입니다. 그 확장의 설치 매니페스트에도 같은 의존성을 선언해야 합니다. 선택 API는 명령을 실행할 때 조회하므로 공급자가 다시 불러와진 뒤에도 이전 객체를 계속 사용하지 않습니다.
+다음은 Penrose Studio 도해를 사용하는 **별도 확장**의 예입니다. 그 확장의 설치 매니페스트에도 같은 의존성을 선언해야 합니다. 선택 API는 명령을 실행할 때 조회하므로 공급자가 다시 불러와진 뒤에도 이전 객체를 계속 사용하지 않습니다.
 
 ```js
 export default {
-  id: 'yourname.note-shortcuts',
+  id: 'yourname.diagram-shortcuts',
   version: '0.1.0',
   engine: '^0.1.0',
-  summary: '필요할 때 스티키 노트를 추가합니다.',
-  dependencies: { 'yourname.reading-notes': '^0.3.0' },
+  summary: '필요할 때 Penrose Studio 도해를 추가합니다.',
+  dependencies: { 'diagram.penrose-studio': '^0.1.0' },
   optionalDependencies: { 'sys.minibuffer': '^0.1.0' },
   conflicts: [],
   provides: { services: [], aspects: [], hsmSlots: [] },
   activate(context) {
     const abort = new AbortController();
     const off = context.commands.register({
-      id: 'yourname.note-shortcuts:add',
+      id: 'yourname.diagram-shortcuts:add',
       title: '노트 추가',
       summary: '미니버퍼가 있으면 확인한 뒤 노트를 추가합니다.',
       async run() {
@@ -66,7 +66,7 @@ export default {
           if (!accepted) return; // 취소 또는 공급자 해제
         }
         if (abort.signal.aborted) return;
-        return context.requireExtensionApi('yourname.reading-notes').addNote();
+        return context.requireExtensionApi('diagram.penrose-studio').insertDiagram();
       },
     });
     return () => { abort.abort(); off(); };
@@ -77,9 +77,9 @@ export default {
 패키지의 `context.services`는 호스트 공용 서비스, 자기 `provides.services`, 직접 선언한 공급자가 제공하는 서비스만 조회합니다. `canvas.creation` 같은 호스트 서비스는 확장 의존성으로 적지 않습니다. 직접 서비스 제공 시에는 이름을 `provides.services`에 선언해야 합니다.
 
 ```js
-// 이 확장과 설치 매니페스트에 provides.services: ['yourname.notes'] 선언
-const release = context.services.provide('yourname.notes', { addNote });
-return { api: { addNote }, dispose: release };
+// 이 확장과 설치 매니페스트에 provides.services: ['yourname.penrose'] 선언
+const release = context.services.provide('yourname.penrose', { insertDiagram });
+return { api: { insertDiagram }, dispose: release };
 ```
 
 `api` 반환 자체에는 서비스 ID가 필요하지 않습니다. `provides.aspects`는 소유 어스펙트, `provides.hsmSlots`는 공개하는 HSM 부모 상태 경로입니다. 같은 서비스·어스펙트·슬롯을 여러 확장이 소유한다고 선언하면 등록이 거부됩니다. `capabilities.services`는 읽거나 사용하는 서비스의 설명용 목록이며 `provides.services`와 역할이 다릅니다.
@@ -94,7 +94,7 @@ return { api: { addNote }, dispose: release };
 
 | 필드 | 예제에서의 의미 |
 | --- | --- |
-| `id` | 고유한 어스펙트 이름. 예: `yourname.reading-notes.note` |
+| `id` | 고유한 어스펙트 이름. 예: `diagram.penrose-studio.diagram` |
 | `label`, `summary` | 사용자에게 보이는 이름과 설명 |
 | `defaults` | JSON으로 저장 가능한 속성 기본값 |
 | `textFields` | 협업 텍스트로 취급하는 `defaults`의 필드 이름 |
@@ -134,15 +134,15 @@ const creation = context.services.get('canvas.creation');
 if (!creation) throw new Error('canvas.creation 서비스가 필요합니다.');
 
 return context.commands.register({
-  id: 'yourname.reading-notes:add-note',
-  title: '독서 메모 추가',
-  summary: '현재 화면에 메모를 추가합니다.',
+  id: 'diagram.penrose-studio:insert-diagram',
+  title: 'Penrose Studio 도해 추가',
+  summary: '현재 화면에 도해를 추가합니다.',
   shortcutScope: 'canvas',
   run: () => creation.create({
-    caller: 'yourname.reading-notes:add-note',
-    aspects: { 'yourname.reading-notes.note': { title: '새 메모' } },
-    width: 240,
-    height: 160,
+    caller: 'diagram.penrose-studio:insert-diagram',
+    aspects: { 'diagram.penrose-studio.diagram': { title: '새 도해' } },
+    width: 320,
+    height: 200,
   }),
 });
 ```
@@ -157,11 +157,11 @@ return context.commands.register({
 
 ```js
 {
-  id: 'add-note',
+  id: 'insert-diagram',
   kind: 'action',
-  label: '독서 메모 추가',
+  label: 'Penrose Studio 도해 추가',
   icon: 'document',
-  commandSymbol: 'yourname.reading-notes:add-note',
+  commandSymbol: 'diagram.penrose-studio:insert-diagram',
   placement: 'tool-shelf',
   requiresSelection: false,
 }

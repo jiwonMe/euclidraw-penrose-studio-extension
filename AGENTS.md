@@ -1,6 +1,6 @@
 # AGENTS.md — alid 외부 확장 개발 지침
 
-이 저장소는 **alid 앱이나 커널이 아니라, GitHub에서 설치하는 독립 확장 템플릿**이다. 현재 예제는 스티키 노트이며, 공개 `ExtensionPackageSpec` 구조 계약만으로 동작한다. alid 모노레포, Rust/Wasm 빌드, npm SDK 설치 없이 이 저장소 안에서 개발·검증할 수 있어야 한다.
+이 저장소는 **alid 앱이나 커널이 아니라, GitHub에서 설치하는 독립 확장**이다. `diagram.penrose-studio`는 Penrose Studio 확장의 스캐폴드이며, 현재 자리표시자 도해가 공개 `ExtensionPackageSpec` 구조 계약만으로 동작한다. Penrose 컴파일러와 Studio 편집기는 아직 구현하지 않았다. alid 모노레포, Rust/Wasm 빌드, npm SDK 설치 없이 이 저장소 안에서 개발·검증할 수 있어야 한다.
 
 > **작은 코어, 기능은 확장으로. 문서에는 사용자 의도만, 호스트와의 연결은 공개 계약만.**
 
@@ -21,7 +21,7 @@
 | 파일 | 책임 / 수정 원칙 |
 | --- | --- |
 | `extension.json` | 확장 ID·제목·버전·설명·커널 호환 범위·의존성·서비스/HSM 제공 선언의 원본. |
-| `src/manifest.js` | 번들과 설치 명세가 공유하는 계약. 현재 `provides.aspects`는 `${metadata.id}.note`로 생성한다. |
+| `src/manifest.js` | 번들과 설치 명세가 공유하는 계약. 현재 `provides.aspects`는 `${metadata.id}.diagram`으로 생성한다. |
 | `src/index.js` | 어스펙트·순수 파생·DOM/SVG·선언형 UI·명령·활성화/정리 구현. |
 | `scripts/validate-config.mjs` | ID·버전 범위·의존성·제공 선언 검증. 기능을 추가해도 검증을 느슨하게 만들어 통과시키지 않는다. |
 | `scripts/install-manifest.mjs` | 설치 API·진입점·SHA256·어스펙트 목록·`capabilities` 생성. |
@@ -61,7 +61,7 @@ pnpm test:watch    # 별도 터미널에서 plugin/manifest 테스트 watch
 
 - 기본 export는 `ExtensionPackageSpec` 형태의 객체다. 번들과 설치 명세의 `id`, `version`, `engine`, `dependencies`, `optionalDependencies`, `conflicts`, `provides`는 일치해야 한다. 공통 값은 `createPackageManifest()`를 통해 유지한다.
 - 설치 형식은 **`apiVersion: 2`**다. `engine`은 커널 호환 범위, `extension.json.version`은 확장 릴리스 버전으로 서로 다르다. 커널 범위만으로 설치 API 지원을 판단하지 않는다.
-- 새 확장을 만들 때만 `example.sticky-notes`를 고유 네임스페이스로 바꾼다. 기존 확장을 업데이트하면서 ID를 바꾸지 않는다. 문서 지침만 수정할 때 예제 ID나 릴리스 버전을 불필요하게 바꾸지 않는다.
+- 현재 설치 ID는 `diagram.penrose-studio`다. 기존 사용자에게 업데이트할 때 이 ID와 어스펙트 ID를 유지하고 `version`을 올린다. 문서 지침만 수정할 때 ID나 릴리스 버전을 불필요하게 바꾸지 않는다.
 - 버전과 의존성 범위는 `validate-config.mjs`가 허용하는 정식 SemVer 문법을 사용한다. 프리릴리스·빌드 접미사·하이픈 범위 등을 지원한다고 가정하지 않는다.
 - `capabilities`는 실제 어스펙트 읽기/쓰기·서비스·명령 사용 의도를 반영한다. `provides`는 소유권·제공 계약이며 접근 의도 목록과 다르다.
 - SHA256을 수동으로 적거나 해시 검사를 끄지 않는다. 설치 명세와 번들은 같은 빌드에서 생성해야 한다.

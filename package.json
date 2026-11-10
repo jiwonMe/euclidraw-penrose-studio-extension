@@ -1,6 +1,6 @@
 {
-  "name": "alid-extension-template",
-  "version": "0.3.0",
+  "name": "euclidraw-penrose-studio-extension",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.22.0",

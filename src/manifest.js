@@ -9,7 +9,7 @@ export function createPackageManifest(metadata) {
     conflicts: [...metadata.conflicts],
     provides: {
       services: [...metadata.provides.services],
-      aspects: [`${metadata.id}.note`],
+      aspects: [`${metadata.id}.diagram`],
       hsmSlots: [...metadata.provides.hsmSlots],
     },
   };

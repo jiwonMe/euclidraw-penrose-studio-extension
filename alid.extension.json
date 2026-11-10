@@ -1,7 +1,7 @@
 {
   "apiVersion": 2,
-  "id": "example.sticky-notes",
-  "version": "0.3.0",
+  "id": "diagram.penrose-studio",
+  "version": "0.1.0",
   "engine": "^0.1.0",
   "dependencies": {},
   "optionalDependencies": {},
@@ -9,25 +9,25 @@
   "provides": {
     "services": [],
     "aspects": [
-      "example.sticky-notes.note"
+      "diagram.penrose-studio.diagram"
     ],
     "hsmSlots": []
   },
-  "title": "스티키 노트",
-  "summary": "캔버스에 짧은 메모를 추가하고 내용과 색상을 편집합니다.",
+  "title": "Penrose Studio",
+  "summary": "Penrose .domain · .substance · .style 스튜디오 확장의 스캐폴드입니다. 도구 선반·인스펙터·단일 Undo·순수 SVG 출판 경로를 확인할 수 있는 자리표시자 도해를 제공합니다.",
   "entry": "dist/plugin.js",
-  "sha256": "8e026cb824762fd73a0923abeda72ae2b3d9cef910ee56d2210cfd60008ff7a9",
+  "sha256": "01ed0216135b13573b1408837d7580575770a3dd35e62e4e1810b8ba68265a6d",
   "aspectIds": [
-    "example.sticky-notes.note"
+    "diagram.penrose-studio.diagram"
   ],
   "capabilities": {
     "readAspects": [
-      "example.sticky-notes.note",
+      "diagram.penrose-studio.diagram",
       "core.transform",
       "core.bounds"
     ],
     "writeAspects": [
-      "example.sticky-notes.note",
+      "diagram.penrose-studio.diagram",
       "core.transform",
       "core.bounds"
     ],
@@ -35,7 +35,7 @@
       "canvas.creation"
     ],
     "commands": [
-      "example.sticky-notes:add-note"
+      "diagram.penrose-studio:insert-diagram"
     ]
   }
 }

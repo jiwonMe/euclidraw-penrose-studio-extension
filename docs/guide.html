@@ -543,7 +543,7 @@
         </div>
 
         <p>
-          예제는 <strong>스티키 노트</strong>입니다. 캔버스 도구 선반에 추가 버튼을 제공하고,
+          예제는 <strong>Penrose Studio 도해</strong>입니다. 캔버스 도구 선반에 추가 버튼을 제공하고,
           노트의 제목·메모·배경색을 속성 패널에서 편집합니다. 생성과 속성 편집은 호스트의
           단일 Undo 타임라인을 사용하며, 설치나 화면 열람만으로 문서를 만들지 않습니다.
         </p>
@@ -574,7 +574,7 @@
         </div>
 
         <p>
-          새 확장을 만들 때만 <code>example.sticky-notes</code>를 고유 네임스페이스로 바꿉니다.
+          새 확장을 만들 때만 <code>diagram.penrose-studio</code>를 고유 네임스페이스로 바꿉니다.
           기존 확장을 업데이트할 때는 ID와 어스펙트 ID를 유지하고 <code>version</code>만 올립니다.
           이 저장소의 공개 설치본과 내 저장소를 동시에 설치하려면 먼저 ID를 바꿔야 합니다.
         </p>
@@ -605,7 +605,7 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
 
         <ol class="steps">
           <li><strong>저장소 만들기</strong><p>이 저장소에서 <em>Use this template → Create a new repository</em>를 선택하고 공개 저장소를 만듭니다.</p></li>
-          <li><strong>ID와 메타데이터 바꾸기</strong><p><code>extension.json</code>의 <code>id</code>, <code>title</code>, <code>version</code>, <code>summary</code>를 수정합니다. <code>id</code>에는 <code>yourname.reading-notes</code>처럼 고유한 네임스페이스를 사용합니다.</p></li>
+          <li><strong>ID와 메타데이터 바꾸기</strong><p><code>extension.json</code>의 <code>id</code>, <code>title</code>, <code>version</code>, <code>summary</code>를 수정합니다. <code>id</code>에는 <code>diagram.penrose-studio</code>처럼 고유한 네임스페이스를 사용합니다.</p></li>
           <li><strong>연결하고 수정하기</strong><p><code>pnpm dev</code>가 표시한 주소를 alid의 <strong>확장 관리 → 개발 중인 확장 연결</strong>에 입력하고 승인합니다. <code>src/index.js</code>를 저장하면 캔버스에 바로 반영됩니다.</p></li>
           <li><strong>빌드 산출물 커밋</strong><p>마무리 전에 <code>pnpm test</code>를 실행하고, 소스와 함께 <code>dist/plugin.js</code>, <code>alid.extension.json</code>, <code>pnpm-lock.yaml</code>을 커밋합니다.</p></li>
         </ol>
@@ -632,7 +632,7 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
             <thead><tr><th>파일</th><th>책임 / 수정 원칙</th></tr></thead>
             <tbody>
               <tr><td><code>extension.json</code></td><td>ID·제목·버전·요약·커널 범위·의존성·서비스/HSM 선언의 원본</td></tr>
-              <tr><td><code>src/manifest.js</code></td><td>번들과 설치 명세가 공유하는 계약. 어스펙트 ID는 <code>${metadata.id}.note</code></td></tr>
+              <tr><td><code>src/manifest.js</code></td><td>번들과 설치 명세가 공유하는 계약. 어스펙트 ID는 <code>${metadata.id}.diagram</code></td></tr>
               <tr><td><code>src/index.js</code></td><td>어스펙트·순수 파생·DOM/SVG·선언형 UI·명령·활성화/정리</td></tr>
               <tr><td><code>scripts/validate-config.mjs</code></td><td>ID·버전 범위·의존성·제공 선언 검증</td></tr>
               <tr><td><code>scripts/install-manifest.mjs</code></td><td>설치 API·진입점·SHA-256·어스펙트 목록·<code>capabilities</code> 생성</td></tr>
@@ -681,7 +681,7 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
   ...createPackageManifest(metadata),  <span class="tok-c">// id·version·engine·의존성·provides</span>
   summary: metadata.summary,
 
-  aspects: [note],
+  aspects: [diagram],
   ui: { controls: [createButton] },
 
   activate(context) {
@@ -724,7 +724,7 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
 
         <p>
           호스트는 공개 GitHub 저장소의 기본 브랜치를 커밋 SHA로 고정한 뒤, 같은 커밋에서
-          <code>alid.extension.json</code>과 번들을 읽습니다. 아래는 스티키 노트 기준의
+          <code>alid.extension.json</code>과 번들을 읽습니다. 아래는 Penrose Studio 도해 기준의
           생성 예시이며, 실제 파일은 <code>pnpm build</code>가 만듭니다.
         </p>
 
@@ -732,8 +732,8 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
           <div class="code-head"><span class="lang">json</span><span class="file">alid.extension.json</span><button class="copy" data-copy>복사</button></div>
           <pre><code>{
   <span class="tok-s">"apiVersion"</span>: <span class="tok-n">2</span>,
-  <span class="tok-s">"id"</span>: <span class="tok-s">"example.sticky-notes"</span>,
-  <span class="tok-s">"title"</span>: <span class="tok-s">"스티키 노트"</span>,
+  <span class="tok-s">"id"</span>: <span class="tok-s">"diagram.penrose-studio"</span>,
+  <span class="tok-s">"title"</span>: <span class="tok-s">"Penrose Studio 도해"</span>,
   <span class="tok-s">"version"</span>: <span class="tok-s">"0.3.0"</span>,
   <span class="tok-s">"engine"</span>: <span class="tok-s">"^0.1.0"</span>,
   <span class="tok-s">"dependencies"</span>: {},
@@ -741,22 +741,22 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
   <span class="tok-s">"conflicts"</span>: [],
   <span class="tok-s">"provides"</span>: {
     <span class="tok-s">"services"</span>: [],
-    <span class="tok-s">"aspects"</span>: [<span class="tok-s">"example.sticky-notes.note"</span>],
+    <span class="tok-s">"aspects"</span>: [<span class="tok-s">"diagram.penrose-studio.diagram"</span>],
     <span class="tok-s">"hsmSlots"</span>: []
   },
   <span class="tok-s">"summary"</span>: <span class="tok-s">"캔버스에 짧은 메모를 추가하고 내용과 색상을 편집합니다."</span>,
   <span class="tok-s">"entry"</span>: <span class="tok-s">"dist/plugin.js"</span>,
   <span class="tok-s">"sha256"</span>: <span class="tok-s">"빌드 시 생성되는 64자리 SHA-256"</span>,
-  <span class="tok-s">"aspectIds"</span>: [<span class="tok-s">"example.sticky-notes.note"</span>],
+  <span class="tok-s">"aspectIds"</span>: [<span class="tok-s">"diagram.penrose-studio.diagram"</span>],
   <span class="tok-s">"capabilities"</span>: {
     <span class="tok-s">"readAspects"</span>: [
-      <span class="tok-s">"example.sticky-notes.note"</span>, <span class="tok-s">"core.transform"</span>, <span class="tok-s">"core.bounds"</span>
+      <span class="tok-s">"diagram.penrose-studio.diagram"</span>, <span class="tok-s">"core.transform"</span>, <span class="tok-s">"core.bounds"</span>
     ],
     <span class="tok-s">"writeAspects"</span>: [
-      <span class="tok-s">"example.sticky-notes.note"</span>, <span class="tok-s">"core.transform"</span>, <span class="tok-s">"core.bounds"</span>
+      <span class="tok-s">"diagram.penrose-studio.diagram"</span>, <span class="tok-s">"core.transform"</span>, <span class="tok-s">"core.bounds"</span>
     ],
     <span class="tok-s">"services"</span>: [<span class="tok-s">"canvas.creation"</span>],
-    <span class="tok-s">"commands"</span>: [<span class="tok-s">"example.sticky-notes:add-note"</span>]
+    <span class="tok-s">"commands"</span>: [<span class="tok-s">"diagram.penrose-studio:insert-diagram"</span>]
   }
 }</code></pre>
         </div>
@@ -785,14 +785,14 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
         </div>
 
         <p>
-          어스펙트는 문서에 저장할 속성과 읽기 전용 파생·표시 동작을 정의합니다. 스티키 노트의
-          어스펙트 ID는 <code>${metadata.id}.note</code>이며, ID를 바꾸면 기존 문서와의
+          어스펙트는 문서에 저장할 속성과 읽기 전용 파생·표시 동작을 정의합니다. Penrose Studio 도해의
+          어스펙트 ID는 <code>${metadata.id}.diagram</code>이며, ID를 바꾸면 기존 문서와의
           호환성이 끊깁니다.
         </p>
 
         <div class="code">
           <div class="code-head"><span class="lang">js</span><span class="file">src/index.js (어스펙트)</span><button class="copy" data-copy>복사</button></div>
-          <pre><code><span class="tok-k">const</span> aspectId = <span class="tok-s">`${metadata.id}.note`</span>;
+          <pre><code><span class="tok-k">const</span> aspectId = <span class="tok-s">`${metadata.id}.diagram`</span>;
 <span class="tok-k">const</span> defaults = {
   title: <span class="tok-s">'작은 생각'</span>,
   body: <span class="tok-s">'이 메모를 선택하고 속성에서 내용을 바꿔 보세요.'</span>,
@@ -813,7 +813,7 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
 
 <span class="tok-k">const</span> note = {
   id: aspectId,
-  label: <span class="tok-s">'스티키 노트'</span>,
+  label: <span class="tok-s">'Penrose Studio 도해'</span>,
   summary: metadata.summary,
   defaults,
   textFields: [<span class="tok-s">'title'</span>, <span class="tok-s">'body'</span>],
@@ -825,7 +825,7 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
   renderDom(content, props, geometry) {
     <span class="tok-c">// 호스트가 준 콘텐츠 컨테이너만 소유한다. 외곽 좌표·회전은 호스트 몫.</span>
     <span class="tok-k">if</span> (!geometry) <span class="tok-k">return</span>;
-    content.innerHTML = <span class="tok-s">`&lt;svg ...&gt;${noteBody(props, geometry)}&lt;/svg&gt;`</span>;
+    content.innerHTML = <span class="tok-s">`&lt;svg ...&gt;${diagramBody(props, geometry)}&lt;/svg&gt;`</span>;
   },
 
   renderSvg(props, geometry) {
@@ -833,7 +833,7 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
     <span class="tok-k">const</span> { x, y, width, height, rotation } = geometry;
     <span class="tok-k">return</span> {
       svg: <span class="tok-s">`&lt;g transform="translate(${x},${y}) rotate(${rotation * 180 / Math.PI},${width / 2},${height / 2})"&gt;`</span>
-        + noteBody(props, geometry) + <span class="tok-s">'&lt;/g&gt;'</span>,
+        + diagramBody(props, geometry) + <span class="tok-s">'&lt;/g&gt;'</span>,
     };
   },
 };</code></pre>
@@ -891,11 +891,11 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
           <div class="code-head"><span class="lang">js</span><span class="file">설치 단위의 도구 선반 버튼</span><button class="copy" data-copy>복사</button></div>
           <pre><code>ui: {
   controls: [{
-    id: <span class="tok-s">'add-note'</span>,
+    id: <span class="tok-s">'insert-diagram'</span>,
     kind: <span class="tok-s">'action'</span>,
-    label: <span class="tok-s">'스티키 노트 추가'</span>,
+    label: <span class="tok-s">'Penrose Studio 도해 추가'</span>,
     icon: <span class="tok-s">'document'</span>,
-    commandSymbol: <span class="tok-s">'example.sticky-notes:add-note'</span>,
+    commandSymbol: <span class="tok-s">'diagram.penrose-studio:insert-diagram'</span>,
     placement: <span class="tok-s">'tool-shelf'</span>,
     requiresSelection: <span class="tok-n">false</span>,
   }],
@@ -906,9 +906,9 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
           <div class="code-head"><span class="lang">js</span><span class="file">어스펙트의 속성 컨트롤</span><button class="copy" data-copy>복사</button></div>
           <pre><code>ui: {
   controls: [
-    { id: <span class="tok-s">'note-title'</span>, kind: <span class="tok-s">'text'</span>,  field: <span class="tok-s">'title'</span>, label: <span class="tok-s">'제목'</span>,   placement: <span class="tok-s">'inspector'</span> },
-    { id: <span class="tok-s">'note-body'</span>,  kind: <span class="tok-s">'text'</span>,  field: <span class="tok-s">'body'</span>,  label: <span class="tok-s">'메모'</span>,   placement: <span class="tok-s">'inspector'</span> },
-    { id: <span class="tok-s">'note-color'</span>, kind: <span class="tok-s">'color'</span>, field: <span class="tok-s">'color'</span>, label: <span class="tok-s">'배경색'</span>, placement: <span class="tok-s">'inspector'</span> },
+    { id: <span class="tok-s">'diagram-title'</span>, kind: <span class="tok-s">'text'</span>,  field: <span class="tok-s">'title'</span>, label: <span class="tok-s">'제목'</span>,   placement: <span class="tok-s">'inspector'</span> },
+    { id: <span class="tok-s">'diagram-body'</span>,  kind: <span class="tok-s">'text'</span>,  field: <span class="tok-s">'body'</span>,  label: <span class="tok-s">'메모'</span>,   placement: <span class="tok-s">'inspector'</span> },
+    { id: <span class="tok-s">'diagram-color'</span>, kind: <span class="tok-s">'color'</span>, field: <span class="tok-s">'color'</span>, label: <span class="tok-s">'배경색'</span>, placement: <span class="tok-s">'inspector'</span> },
   ],
 }</code></pre>
         </div>
@@ -954,13 +954,13 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
 <span class="tok-k">if</span> (!creation) <span class="tok-k">throw</span> <span class="tok-k">new</span> Error(<span class="tok-s">'canvas.creation 서비스가 필요합니다.'</span>);
 
 <span class="tok-k">return</span> context.commands.register({
-  id: <span class="tok-s">'example.sticky-notes:add-note'</span>,
-  title: <span class="tok-s">'스티키 노트 추가'</span>,
+  id: <span class="tok-s">'diagram.penrose-studio:insert-diagram'</span>,
+  title: <span class="tok-s">'Penrose Studio 도해 추가'</span>,
   summary: <span class="tok-s">'현재 화면에 메모를 추가합니다.'</span>,
   shortcutScope: <span class="tok-s">'canvas'</span>,
   run: () =&gt; creation.create({
-    caller: <span class="tok-s">'example.sticky-notes:add-note'</span>,
-    aspects: { <span class="tok-s">'example.sticky-notes.note'</span>: { ...defaults } },
+    caller: <span class="tok-s">'diagram.penrose-studio:insert-diagram'</span>,
+    aspects: { <span class="tok-s">'diagram.penrose-studio.diagram'</span>: { ...defaults } },
     width: <span class="tok-n">240</span>,
     height: <span class="tok-n">160</span>,
   }),
@@ -1003,10 +1003,10 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
   <span class="tok-k">if</span> (!creation) <span class="tok-k">throw</span> <span class="tok-k">new</span> Error(<span class="tok-s">'canvas.creation 서비스가 필요합니다.'</span>);
 
   <span class="tok-k">let</span> active = <span class="tok-n">true</span>;
-  <span class="tok-k">const</span> addNote = () =&gt; {
+  <span class="tok-k">const</span> insertDiagram = () =&gt; {
     <span class="tok-k">if</span> (!active) <span class="tok-k">throw</span> <span class="tok-k">new</span> Error(<span class="tok-s">'비활성화된 API입니다. 다시 조회하세요.'</span>);
     <span class="tok-k">return</span> creation.create({
-      caller: addNoteCommand,
+      caller: insertDiagramCommand,
       aspects: { [aspectId]: { ...defaults } },
       width: <span class="tok-n">240</span>,
       height: <span class="tok-n">160</span>,
@@ -1014,15 +1014,15 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
   };
 
   <span class="tok-k">const</span> offCommand = context.commands.register({
-    id: addNoteCommand,
-    title: <span class="tok-s">'스티키 노트 추가'</span>,
+    id: insertDiagramCommand,
+    title: <span class="tok-s">'Penrose Studio 도해 추가'</span>,
     summary: <span class="tok-s">'현재 캔버스 중앙에 메모를 추가합니다.'</span>,
     shortcutScope: <span class="tok-s">'canvas'</span>,
-    run: addNote,
+    run: insertDiagram,
   });
 
   <span class="tok-k">return</span> {
-    api: Object.freeze({ addNote }),
+    api: Object.freeze({ insertDiagram }),
     dispose() {
       <span class="tok-k">if</span> (!active) <span class="tok-k">return</span>;
       active = <span class="tok-n">false</span>;
@@ -1042,12 +1042,12 @@ pnpm test:watch    <span class="tok-c"># 별도 터미널에서 plugin/manifest 
 
         <div class="code">
           <div class="code-head"><span class="lang">js</span><span class="file">공급자 API 조회</span><button class="copy" data-copy>복사</button></div>
-          <pre><code>dependencies: { <span class="tok-s">'yourname.reading-notes'</span>: <span class="tok-s">'^0.3.0'</span> },
+          <pre><code>dependencies: { <span class="tok-s">'diagram.penrose-studio'</span>: <span class="tok-s">'^0.3.0'</span> },
 optionalDependencies: { <span class="tok-s">'sys.minibuffer'</span>: <span class="tok-s">'^0.1.0'</span> },
 
 activate(context) {
   <span class="tok-k">const</span> minibuffer = context.getExtensionApi(<span class="tok-s">'sys.minibuffer'</span>); <span class="tok-c">// 없으면 undefined</span>
-  <span class="tok-k">const</span> notes = context.requireExtensionApi(<span class="tok-s">'yourname.reading-notes'</span>);
+  <span class="tok-k">const</span> notes = context.requireExtensionApi(<span class="tok-s">'diagram.penrose-studio'</span>);
   <span class="tok-c">// 선택 API는 호출 시마다 가용성을 확인하고 영구 캐시하지 않는다.</span>
 }</code></pre>
         </div>

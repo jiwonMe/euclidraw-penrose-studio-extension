@@ -1,8 +1,8 @@
 {
-  "id": "example.sticky-notes",
-  "title": "스티키 노트",
-  "version": "0.3.0",
-  "summary": "캔버스에 짧은 메모를 추가하고 내용과 색상을 편집합니다.",
+  "id": "diagram.penrose-studio",
+  "title": "Penrose Studio",
+  "version": "0.1.0",
+  "summary": "Penrose .domain · .substance · .style 스튜디오 확장의 스캐폴드입니다. 도구 선반·인스펙터·단일 Undo·순수 SVG 출판 경로를 확인할 수 있는 자리표시자 도해를 제공합니다.",
   "engine": "^0.1.0",
   "dependencies": {},
   "optionalDependencies": {},

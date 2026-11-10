@@ -1,8 +1,8 @@
 var extension_default = {
-	id: "example.sticky-notes",
-	title: "스티키 노트",
-	version: "0.3.0",
-	summary: "캔버스에 짧은 메모를 추가하고 내용과 색상을 편집합니다.",
+	id: "diagram.penrose-studio",
+	title: "Penrose Studio",
+	version: "0.1.0",
+	summary: "Penrose .domain · .substance · .style 스튜디오 확장의 스캐폴드입니다. 도구 선반·인스펙터·단일 Undo·순수 SVG 출판 경로를 확인할 수 있는 자리표시자 도해를 제공합니다.",
 	engine: "^0.1.0",
 	dependencies: {},
 	optionalDependencies: {},
@@ -24,18 +24,18 @@ function createPackageManifest(metadata) {
 		conflicts: [...metadata.conflicts],
 		provides: {
 			services: [...metadata.provides.services],
-			aspects: [`${metadata.id}.note`],
+			aspects: [`${metadata.id}.diagram`],
 			hsmSlots: [...metadata.provides.hsmSlots]
 		}
 	};
 }
 // src/index.js
-var aspectId = `${extension_default.id}.note`;
-var addNoteCommand = `${extension_default.id}:add-note`;
+var aspectId = `${extension_default.id}.diagram`;
+var insertDiagramCommand = `${extension_default.id}:insert-diagram`;
 var defaults = {
-	title: "작은 생각",
-	body: "이 메모를 선택하고 속성에서 내용을 바꿔 보세요.",
-	color: "#f5f3ff"
+	title: "Penrose Studio",
+	body: "스캐폴드 도해입니다.\n.domain · .substance · .style 편집기는 다음 단계에서 구현합니다.",
+	color: "#eef2ff"
 };
 var escapeXml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
 	"&": "&amp;",
@@ -53,22 +53,22 @@ function derive(_props, id, view) {
 	return {
 		x: finite(transform.x, 0),
 		y: finite(transform.y, 0),
-		width: positive(bounds.width, 240),
-		height: positive(bounds.height, 160),
+		width: positive(bounds.width, 320),
+		height: positive(bounds.height, 200),
 		rotation: finite(transform.rotation, 0)
 	};
 }
-function noteBody(props, geometry) {
+function diagramBody(props, geometry) {
 	const { width, height } = geometry;
 	const inset = Math.min(16, width / 4, height / 4);
-	const body = String(props.body ?? "").split(/\r?\n/).slice(0, Math.max(0, Math.floor((height - 72) / 20) + 1)).map((line, index) => `<tspan x="${inset}" y="${66 + index * 20}">${escapeXml(line)}</tspan>`).join("");
-	return `<rect x="0.5" y="0.5" width="${Math.max(0, width - 1)}" height="${Math.max(0, height - 1)}" rx="8" fill="${colorOf(props.color)}" stroke="#ddd6fe"/>
-<rect x="${inset}" y="16" width="22" height="3" rx="1.5" fill="#7c3aed"/>
-<svg width="${width}" height="${height}" overflow="hidden"><text x="${inset}" y="43" fill="#28203b" font-family="system-ui, sans-serif" font-size="16" font-weight="600">${escapeXml(props.title ?? "")}</text><text fill="#5b5369" font-family="system-ui, sans-serif" font-size="12">${body}</text></svg>`;
+	const body = String(props.body ?? "").split(/\r?\n/).slice(0, Math.max(0, Math.floor((height - 84) / 20) + 1)).map((line, index) => `<tspan x="${inset}" y="${74 + index * 20}">${escapeXml(line)}</tspan>`).join("");
+	return `<rect x="0.5" y="0.5" width="${Math.max(0, width - 1)}" height="${Math.max(0, height - 1)}" rx="10" fill="${colorOf(props.color)}" stroke="#c7d2fe"/>
+<rect x="${inset}" y="16" width="22" height="3" rx="1.5" fill="#4f46e5"/>
+<svg width="${width}" height="${height}" overflow="hidden"><text x="${inset}" y="47" fill="#1e1b4b" font-family="system-ui, sans-serif" font-size="16" font-weight="600">${escapeXml(props.title ?? "")}</text><text fill="#4338ca" font-family="system-ui, sans-serif" font-size="12">${body}</text></svg>`;
 }
-var note = {
+var diagram = {
 	id: aspectId,
-	label: "스티키 노트",
+	label: "Penrose Studio 도해",
 	summary: extension_default.summary,
 	defaults,
 	textFields: ["title", "body"],
@@ -82,30 +82,30 @@ var note = {
 	derive,
 	renderDom(content, props, geometry) {
 		if (!geometry) return;
-		content.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${geometry.height}" viewBox="0 0 ${geometry.width} ${geometry.height}" role="img" aria-label="${escapeXml(props.title ?? "스티키 노트")}" style="display:block;user-select:none;pointer-events:none">${noteBody(props, geometry)}</svg>`;
+		content.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${geometry.height}" viewBox="0 0 ${geometry.width} ${geometry.height}" role="img" aria-label="${escapeXml(props.title ?? "Penrose Studio 도해")}" style="display:block;user-select:none;pointer-events:none">${diagramBody(props, geometry)}</svg>`;
 	},
 	renderSvg(props, geometry) {
 		if (!geometry) return { svg: "" };
 		const { x, y, width, height, rotation } = geometry;
-		return { svg: `<g transform="translate(${x},${y}) rotate(${rotation * 180 / Math.PI},${width / 2},${height / 2})">${noteBody(props, geometry)}</g>` };
+		return { svg: `<g transform="translate(${x},${y}) rotate(${rotation * 180 / Math.PI},${width / 2},${height / 2})">${diagramBody(props, geometry)}</g>` };
 	},
 	ui: { controls: [
 		{
-			id: "note-title",
+			id: "diagram-title",
 			kind: "text",
 			field: "title",
 			label: "제목",
 			placement: "inspector"
 		},
 		{
-			id: "note-body",
+			id: "diagram-body",
 			kind: "text",
 			field: "body",
-			label: "메모",
+			label: "설명",
 			placement: "inspector"
 		},
 		{
-			id: "note-color",
+			id: "diagram-color",
 			kind: "color",
 			field: "color",
 			label: "배경색",
@@ -116,38 +116,38 @@ var note = {
 var src_default = {
 	...createPackageManifest(extension_default),
 	summary: extension_default.summary,
-	aspects: [note],
+	aspects: [diagram],
 	ui: { controls: [{
-		id: "add-note",
+		id: "insert-diagram",
 		kind: "action",
-		label: "스티키 노트 추가",
+		label: "Penrose Studio 도해 추가",
 		icon: "document",
-		commandSymbol: addNoteCommand,
+		commandSymbol: insertDiagramCommand,
 		placement: "tool-shelf",
 		requiresSelection: false
 	}] },
 	activate(context) {
 		const creation = context.services.get("canvas.creation");
-		if (!creation) throw new Error("스티키 노트에는 canvas.creation 호스트 서비스가 필요합니다.");
+		if (!creation) throw new Error("Penrose Studio에는 canvas.creation 호스트 서비스가 필요합니다.");
 		let active = true;
-		const addNote = () => {
-			if (!active) throw new Error("스티키 노트 확장이 비활성화되었습니다. 공개 API를 다시 조회하세요.");
+		const insertDiagram = () => {
+			if (!active) throw new Error("Penrose Studio 확장이 비활성화되었습니다. 공개 API를 다시 조회하세요.");
 			return creation.create({
-				caller: addNoteCommand,
+				caller: insertDiagramCommand,
 				aspects: { [aspectId]: { ...defaults } },
-				width: 240,
-				height: 160
+				width: 320,
+				height: 200
 			});
 		};
 		const offCommand = context.commands.register({
-			id: addNoteCommand,
-			title: "스티키 노트 추가",
-			summary: "현재 캔버스 중앙에 메모를 추가합니다.",
+			id: insertDiagramCommand,
+			title: "Penrose Studio 도해 추가",
+			summary: "현재 캔버스 중앙에 스캐폴드 도해를 추가합니다.",
 			shortcutScope: "canvas",
-			run: addNote
+			run: insertDiagram
 		});
 		return {
-			api: Object.freeze({ addNote }),
+			api: Object.freeze({ insertDiagram }),
 			dispose() {
 				if (!active) return;
 				active = false;

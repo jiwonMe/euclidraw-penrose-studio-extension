@@ -48,11 +48,11 @@ test('dev server rebuilds on change, serves a matching manifest and bundle, and 
     assert.equal(manifest.sha256, createHash('sha256').update(bundle).digest('hex'));
     assert.equal(first.sha256, manifest.sha256);
 
-    await writeFile(source, original.replace("'작은 생각'", "'바뀐 생각'"));
+    await writeFile(source, original.replace("'Penrose Studio'", "'바뀐 스튜디오'"));
     const second = await stream.next('reload');
     assert.ok(second.revision > first.revision);
     assert.notEqual(second.sha256, first.sha256);
-    assert.match(await (await fetch(`${server.url}/dist/plugin.js`)).text(), /바뀐 생각/);
+    assert.match(await (await fetch(`${server.url}/dist/plugin.js`)).text(), /바뀐 스튜디오/);
 
     const denied = await fetch(`${server.url}/alid.extension.json`, { headers: { Origin: 'https://evil.example' } });
     assert.equal(denied.status, 403);

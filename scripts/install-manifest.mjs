@@ -28,10 +28,10 @@ export async function createInstallManifest(outDir = new URL('dist/', root)) {
     sha256: createHash('sha256').update(bundle).digest('hex'),
     aspectIds: contract.provides.aspects,
     capabilities: {
-      readAspects: [`${metadata.id}.note`, 'core.transform', 'core.bounds'],
-      writeAspects: [`${metadata.id}.note`, 'core.transform', 'core.bounds'],
+      readAspects: [`${metadata.id}.diagram`, 'core.transform', 'core.bounds'],
+      writeAspects: [`${metadata.id}.diagram`, 'core.transform', 'core.bounds'],
       services: ['canvas.creation'],
-      commands: [`${metadata.id}:add-note`],
+      commands: [`${metadata.id}:insert-diagram`],
     },
   };
   return { manifest, manifestText: `${JSON.stringify(manifest, null, 2)}\n`, bundle };
